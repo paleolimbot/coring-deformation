@@ -21,13 +21,39 @@ If we take a slice through a deformed core (as we would while extruding), what i
 
 ## Methods
 
+```{r}
+# define parameters
+barrel_width <- 6 # use 8 cm for barrel width
+slice_sizes <- c(0.1, 0.5, 1)
+cellsize <- 0.025
+```
+
+
 ### Core photo analysis
 
 To calculate parameters for the deformation model, we loaded XXX scale photos of deformed cores into ImageJ software and digitized deformed strata. Coordinates were transformed to `ri` and `di` values for individual strata by subtracting the minimum `d` value from the rest of the values, and subtracting the average `x` value from the rest of the values. Power regression (quadratic) was performed on the data to obtain the coefficients for minimum, maximum, and mean levels of deformation. Corer type and core barrel diameter were recorded with these data.
 
 ### Deformation model
 
-We modeled horizontal sections with height `H` and diameter `D` as a 3-dimensional raster grid with a cell size of 0.25 mm (Figure 2). For each cell `i`, an original depth `oi` was calculated with the minimum, maximum, and mean parameters obtained from digitized strata. Density histograms were then obtained to estimate the percentage contribution of each original depth `o` to the slice. For each slice, `d=0` refers to the middle of the slice. We produced these models for `D`=6 cm and `D`=10 cm, as this represents a range that may be used for horizontally sectioned cores.
+We modeled horizontal sections with height `H` and diameter `D` as a 3-dimensional raster grid with a cell size of 0.25 mm (Figure 2). For each cell `i`, an original depth `oi` was calculated with the minimum, maximum, and mean parameters obtained from digitized strata. Density histograms were then obtained to estimate the percentage contribution of each original depth `o` to the slice. For each slice, `d=0` refers to the middle of the slice. We produced these models for `D`=8 cm, as this represents a frequently used barrel diameter for horizontally sectioned cores.
+
+
+### Effect on paleolimnological data
+
+```{r}
+# generate data at resolution 1 mm (200 samples for 20 cm)
+set.seed(2500)
+original_data <- data.frame(d0=seq(0, 20, cellsize), vals=rnorm(20/cellsize+1))
+smoothing = 10
+for(s in 1:smoothing) {
+  original_data$vals <- ksmooth(original_data$d0, original_data$vals, bandwidth=0.1)$y
+}
+
+ggplot(original_data, aes(y=d0, x=vals)) + geom_path() + scale_y_reverse()
+```
+
+
+We used density histograms as a smoothing filter on fictional paleolimnological data to visualize the effect of deformation on stratigraphic data. These data were fictional (smoothed random normal data) but inspired by ITRAX core scanner data. 
 
 ![model vars](figs/fig2_deformation_vars.png)
 
@@ -68,9 +94,14 @@ modelparams <- deformations %>%
   group_by(layercode) %>%
   do(create_quadratic_model(.))
 
+# these are used in the model later
+mina <- round(min(modelparams$a), 3)
+maxa <- round(max(modelparams$a), 2)
+meana <- round(mean(modelparams$a), 2)
+coeffs <- c(0, mina, meana, maxa)
 ```
 
-We digitized `r length(unique(deformations$layercode))` deformed layers from `r length(unique(deformations$core))` scale photos of split cores. The quadratic regression performed produced an excellent fit of the data (r2 from `r format(min(modelparams$r2), digits=2)` to `r format(max(modelparams$r2), digits=2)`). Coefficients for `x^2` range from `r format(min(modelparams$a), digits=2)` to `r format(max(modelparams$a), digits=2)`, with a mean of `r format(mean(modelparams$a), digits=2)`.
+We digitized `r length(unique(deformations$layercode))` deformed layers from `r length(unique(deformations$core))` scale photos of split cores. The quadratic regression performed produced an excellent fit of the data (r2 from `r format(min(modelparams$r2), digits=2)` to `r format(max(modelparams$r2), digits=2)`). Coefficients for `x^2` range from `r mina` to `r maxa`, with a mean of `r meana`.
 
 
 ```{r, results='asis'}
@@ -79,146 +110,129 @@ knitr::kable(modelparams, digits=2)
 
 ### Deformation model
 
-Imagine we have a 2 cm wide core where we can model deformation as `d = d0 + r^2` (where `r` is the distance to the centre of the core barrel and `d0` is the original depth prior to deformation). It follows that we can then model the original depth of the sediment at a position (d, r) as `d0(d, r) = d - r^2`. Rasterizing this, we can make a model of actual and original depths given a function `d0(d, r)`
-
 ```{r}
-deformation_model3d <- function(slicesize, d0, width=2, cellsize=0.025) {
+# This function takes a `slicesize` (for example, 1 cm) and a function `d0` that
+# returns a the original depth prior to deformation given a depth (`d`) and a
+# radius from the centre of the core (`r`). The `cellsize` parameter specifies
+# the resolution at which to create the model (low values for higher resolution)
+# and the `width` specifies the interior diameter of the core barrel. The `d`
+# values in the model are relative to the centre of the slice. For a single
+# function `d0` and slice size, we can then plot a cross-section and histogram
+# of the depths prior to deformation.
+
+# output is a data.frame with columsn x, y, z, r, and d0 (which we should refactor to oi...)
+
+deformation_model3d <- function(slicesize, d0, width=2, cellsize=0.025, stat=NULL) {
   coords <- expand.grid(x=seq(-width/2, width/2, cellsize),
                         y=seq(-width/2, width/2, cellsize),
                         z=seq(-slicesize/2, slicesize/2, cellsize))
   coords$r <- sqrt(coords$x^2 + coords$y^2)
   coords <- coords[coords$r <= width/2,]
   coords$d0 <- d0(coords$z, coords$r)
+  if(!is.null(stat)) {
+    coords[["stat"]] <- stat(coords$d0)
+  }
   return(coords)
 }
-```
 
-This function takes a `slicesize` (for example, 1 cm) and a function `d0` that returns a the original depth prior to deformation given a depth (`d`) and a radius from the centre of the core (`r`). The `cellsize` parameter specifies the resolution at which to create the model (low values for higher resolution) and the `width` specifies the interior diameter of the core barrel. The `d` values in the model are relative to the centre of the slice. For a single function `d0` and slice size, we can then plot a cross-section and histogram of the depths prior to deformation.
+# expand to grid
+params <- expand.grid(slicesize=slice_sizes, coeff=coeffs)
 
-```{r}
-model <- deformation_model3d(1, function(d, r) d - r^2)
-
-# overhead view (same for all sizes of slice)
-ggplot(model %>% filter(z==0), aes(x=x, y=y)) + 
-  geom_raster(aes(fill=d0)) + 
-  scale_fill_gradient2() + scale_y_reverse() + 
-  coord_fixed()
-
-# side on view
-ggplot(model %>% filter(y==0), aes(x=x, y=z)) + geom_raster(aes(fill=d0)) + 
-  scale_fill_gradient2() + scale_y_reverse() + 
-  coord_fixed()
-
-# density histogram
-ggplot(model, aes(x=d0)) + geom_density() 
-```
-
-This histogram seems to indicate that the average actual depth (`r mean(model)`) is slightly smaller than the centre of the slice.
-
-## Effect of degree of deformation and slice size
-
-We can also vary these parameters to model the effect of slice size and degree of deformation.
-
-```{r}
-# dplyr doesn't like passing functions or evals so we are going to wrap this
-# so we can pass a single number
-deformation_model_bydegree <- function(slicesize, degree, cellsize=0.025, width=2) {
-  d0 <- function(d, r) d - abs(r^degree)
-  deformation_model3d(slicesize, d0, width, cellsize)
+# define a wrapper function that will create the model based on the
+# parameters we would like to vary
+# include stat of concentration of our value
+deformation_model_wrapper <- function(slicesize, coeff) {
+  deformation_model3d(slicesize, 
+                      d0=function(d, r) d - coeff * r^2, 
+                      width = barrel_width, 
+                      cellsize = cellsize)
 }
 
 # create the models in long form so we can plot with facets
-all <- expand.grid(slicesize=seq(0.2, 1, 0.2), degree=2:6) %>% 
-  group_by(slicesize, degree) %>% 
-  do(deformation_model_bydegree(.$slicesize, .$degree))
-
-# overhead view (same for all sizes of slice)
-ggplot(all %>% filter(z==0, slicesize==all$slicesize[1]), aes(x=x, y=y)) + 
-  geom_raster(aes(fill=d0)) + 
-  scale_fill_gradient2() + scale_y_reverse() + 
-  coord_fixed() + facet_grid(slicesize ~ degree)
-
-# side on view
-ggplot(all %>% filter(y==0), aes(x=x, y=z)) + geom_raster(aes(fill=d0)) + 
-  scale_fill_gradient2() + scale_y_reverse() + 
-  coord_fixed() + facet_grid(slicesize ~ degree)
-
-# density histograms
-ggplot(all, aes(x=d0)) + geom_density() + facet_grid(slicesize ~ degree)
-
-# we can also create a table summarizing some things
-
-all_summary <- all %>% summarise(mean_depth=mean(d0))
-```
-
-```{r, results='asis', warning=FALSE}
-knitr::kable(dcast(all_summary, degree~slicesize), digits=2)
-```
-
-Looks like for the even powers this is pretty easy. The weighted average depth of a given slice is always `-1/(degree/2)`. This means the average depth is always slightly less than (25 to 50%) the value stated, regardless of slice thickness.
-
-```{r}
-rm(all, all_summary, model, deformation_model_bydegree)
-```
-
-
-## An assessment of actual deformation in cores
-
-
-
-## A more realistic model
-
-It appears a quadratic is a good fit for experimental deformation data (where cores are deformed, which not all are). Coefficients for `x^2` range from 0.1 to 0.6. Core barrel diameters range from 2 to 5 inches (5 to 13 cm), so we will use these end members as our test cases.
-
-### Effect of slice size
-
-```{r}
-deformation_model_wrapper <- function(slicesize, coeff, width) {
-  deformation_model3d(slicesize, d0=function(d, r) d - coeff * r^2, width = width, cellsize = width/100)
-}
-
-# create the models in long form so we can plot with facets
-all <- expand.grid(slicesize=seq(0.2, 1, 0.2), coeff=c(0.1, 0.3, 0.5)) %>% 
+all <- params %>% 
   group_by(slicesize, coeff) %>% 
-  do(deformation_model_wrapper(.$slicesize, .$coeff, 7))
+  do(deformation_model_wrapper(.$slicesize, .$coeff))
 
 # overhead view (same for all sizes of slice)
 ggplot(all %>% filter(abs(z)==min(abs(z)), slicesize==all$slicesize[1]), aes(x=x, y=y)) + 
   geom_raster(aes(fill=d0)) + 
   scale_fill_gradient2() + scale_y_reverse() + 
-  coord_fixed() + facet_grid(slicesize ~ coeff)
+  coord_fixed() + facet_wrap(~coeff)
 
 # side on view
 ggplot(all %>% filter(abs(y)==min(abs(y))), aes(x=x, y=z)) + geom_raster(aes(fill=d0)) + 
   scale_fill_gradient2() + scale_y_reverse() + 
   coord_fixed() + facet_grid(slicesize ~ coeff)
 
-# density histograms
-ggplot(all, aes(x=d0)) + geom_density() + facet_grid(slicesize ~ coeff)
+# create smoothing models (histograms with binwidth of cellsize, except with the $density param)
+create_smoothing_model <- function(vals) {
+  limit <- round(max(abs(vals)) / cellsize) * cellsize #snap to cellsize
+  breaks <- seq(-limit-cellsize, limit+cellsize, cellsize)
+  h <- hist(vals, breaks=breaks, plot=FALSE)
+  # fill smoothing model with zeros to make symmetrical
+  return(data.frame(d=breaks[-1], density=h$density))
+}
 
-```
+models <- all %>% 
+  group_by(slicesize, coeff) %>% 
+  do(create_smoothing_model(.$d0))
 
-### Effect of barrel width
-
-
-```{r}
-# create the models in long form so we can plot with facets
-all <- expand.grid(width=c(5, 7, 13), coeff=c(0.1, 0.3, 0.5)) %>% 
-  group_by(width, coeff) %>% 
-  do(deformation_model_wrapper(1, .$coeff, .$width))
-
-# side on view
-ggplot(all %>% filter(y==0), aes(x=x, y=z)) + geom_raster(aes(fill=d0)) + 
-  scale_fill_gradient2() + scale_y_reverse() + 
-  coord_fixed() + facet_grid(width ~ coeff)
-
-# density histograms
-ggplot(all, aes(x=d0)) + geom_density() + facet_grid(width ~ coeff)
+# plot (same as density histogram but this is faster)
+ggplot(models %>% filter(density != 0), aes(x=d, y=density)) + 
+  geom_bar(width=cellsize, stat="identity") + 
+  facet_grid(slicesize ~ coeff)
 ```
 
 ## Smoothing effects on stratigraphic data
 
 The distribution (density) acts as a smoothing filter on geochem data.
+
+```{r}
+# Take our original data and plot it.
+ggplot(original_data, aes(y=d0, x=vals)) + geom_path() + scale_y_reverse()
+
+# new approach...make a 2d grid just like the last time but with d and x as the params
+deformation_model_coredata <- function(original_data, d0, width=2, cellsize=0.025) {
+  coords <- expand.grid(x=seq(-width/2, width/2, cellsize),
+                        d=seq(min(original_data$d0), max(original_data$d0), cellsize))
+  coords$d0 <- d0(coords$d, abs(coords$x))
+  # fit to cellsize
+  coords$d0 <- round(coords$d0/cellsize) * cellsize
+  coords$val <- sapply(coords$d0, function(x) {
+    original_data$vals[original_data$d0==x]
+  })
+  return(coords)
+}
+
+deformation_model_coredata_wrapper <- function(slicesize, coeff) {
+  deformation_model_coredata(slicesize, 
+                      d0=function(d, r) d - coeff * r^2, 
+                      width = barrel_width, 
+                      cellsize = cellsize)
+}
+
+
+
+
+
+# define function to "smooth" the data and section it, producing a new dataframe of d/vals cols
+extrude <- function(slice_size, filter) {
+  # filter (skipping)
+  d <- original_data
+  d$vals <- stats::filter(d$vals, filter=filter/sum(filter))
+  
+  # section
+  out <- data.frame(d=seq(0+slice_size/2, max(original_data$d0), slice_size))
+  merge(out, d, by.x="d", by.y="d0")
+}
+
+sliced <- models %>% group_by(slicesize, coeff) %>% do(extrude(unique(.$slicesize), .$density))
+
+ggplot(sliced, aes(y=d, x=vals)) + geom_path() + scale_y_reverse() + 
+  facet_grid(slicesize ~ coeff, scales="free_x")
+
+```
+
 
 ## Conclusions
 
