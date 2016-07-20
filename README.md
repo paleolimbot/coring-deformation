@@ -31,10 +31,12 @@ To calculate parameters for the deformation model, we loaded XXX scale photos of
 
 We modeled horizontal sections with height `H` and diameter `D` as a 3-dimensional raster grid with a cell size of 0.25 mm (Figure 2). For each cell `i`, an original depth `oi` was calculated with the minimum, maximum, and mean parameters obtained from digitized strata. Density histograms were then obtained to estimate the percentage contribution of each original depth `o` to the slice. For each slice, `d=0` refers to the middle of the slice. We produced these models for `D`=8 cm, as this represents a frequently used barrel diameter for horizontally sectioned cores.
 
+![model vars](figs/fig2_deformation_vars.png)
+
 ### Effect on paleolimnological data
 
 ``` r
-# generate data at resolution 1 mm (200 samples for 20 cm)
+# generate data at resolution 1 mm (200 samples for 20 cm). smooth random normal data
 set.seed(2500)
 original_data <- data.frame(d0=seq(0, 20, cellsize), vals=rnorm(20/cellsize+1))
 smoothing = 10
@@ -42,14 +44,10 @@ for(s in 1:smoothing) {
   original_data$vals <- ksmooth(original_data$d0, original_data$vals, bandwidth=0.1)$y
 }
 
-ggplot(original_data, aes(y=d0, x=vals)) + geom_path() + scale_y_reverse()
+# ggplot(original_data, aes(y=d0, x=vals)) + geom_path() + scale_y_reverse()
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-3-1.png)
-
-We used density histograms as a smoothing filter on fictional paleolimnological data to visualize the effect of deformation on stratigraphic data. These data were fictional (smoothed random normal data) but inspired by ITRAX core scanner data.
-
-![model vars](figs/fig2_deformation_vars.png)
+We used density histograms as a smoothing filter on fictional paleolimnological data to visualize the effect of deformation on stratigraphic data. These data were fictional (smoothed random normal data) but inspired by ITRAX core scanner data (1 mm sample resolution).
 
 Results
 -------
@@ -226,38 +224,8 @@ Smoothing effects on stratigraphic data
 The distribution (density) acts as a smoothing filter on geochem data.
 
 ``` r
-# Take our original data and plot it.
-ggplot(original_data, aes(y=d0, x=vals)) + geom_path() + scale_y_reverse()
-```
-
-![](README_files/figure-markdown_github/unnamed-chunk-7-1.png)
-
-``` r
-# new approach...make a 2d grid just like the last time but with d and x as the params
-deformation_model_coredata <- function(original_data, d0, width=2, cellsize=0.025) {
-  coords <- expand.grid(x=seq(-width/2, width/2, cellsize),
-                        d=seq(min(original_data$d0), max(original_data$d0), cellsize))
-  coords$d0 <- d0(coords$d, abs(coords$x))
-  # fit to cellsize
-  coords$d0 <- round(coords$d0/cellsize) * cellsize
-  coords$val <- sapply(coords$d0, function(x) {
-    original_data$vals[original_data$d0==x]
-  })
-  return(coords)
-}
-
-deformation_model_coredata_wrapper <- function(slicesize, coeff) {
-  deformation_model_coredata(slicesize, 
-                      d0=function(d, r) d - coeff * r^2, 
-                      width = barrel_width, 
-                      cellsize = cellsize)
-}
-
-
-
-
-
 # define function to "smooth" the data and section it, producing a new dataframe of d/vals cols
+# still need to check this
 extrude <- function(slice_size, filter) {
   # filter (skipping)
   d <- original_data
@@ -276,7 +244,7 @@ ggplot(sliced, aes(y=d, x=vals)) + geom_path() + scale_y_reverse() +
 
     ## Warning: Removed 5 rows containing missing values (geom_path).
 
-![](README_files/figure-markdown_github/unnamed-chunk-7-2.png)
+![](README_files/figure-markdown_github/unnamed-chunk-7-1.png)
 
 Conclusions
 -----------
