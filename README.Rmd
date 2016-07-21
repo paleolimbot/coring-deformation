@@ -44,7 +44,7 @@ We modeled horizontal sections with height `H` and diameter `D` as a 3-dimension
 ### Effect on paleolimnological data
 
 ```{r}
-# generate data at resolution 1 mm (200 samples for 20 cm). smooth random normal data
+# generate data at resolution cellsize/2 (200 samples for 20 cm). smooth random normal data
 set.seed(2500)
 original_data <- data.frame(d0=seq(0, 20, cellsize), vals=rnorm(20/cellsize+1))
 smoothing = 10
@@ -188,19 +188,51 @@ ggplot(models %>% filter(density != 0), aes(x=d, y=density)) +
 The distribution (density) acts as a smoothing filter on geochem data.
 
 ```{r}
-# define function to "smooth" the data and section it, producing a new dataframe of d/vals cols
-# still need to check this
-extrude <- function(slice_size, filter) {
-  # filter (skipping)
-  d <- original_data
-  d$vals <- stats::filter(d$vals, filter=filter/sum(filter))
-  
-  # section
-  out <- data.frame(d=seq(0+slice_size/2, max(original_data$d0), slice_size))
-  merge(out, d, by.x="d", by.y="d0")
+# we need a custom filter function because stats::filter() doesn't do the ends properly
+custom_filter <- function(d, vals, filter, newds=NULL, normalize=TRUE, tol=1e-13) {
+  if(length(d) != length(vals)) stop("Length of ds must be equal to length of vals")
+  midf <- floor(length(filter) / 2) + 1
+  if(is.null(newds)) {
+    newds <- d
+  }
+  sapply(newds, function(x) {
+    i <- which(abs(d-x) < tol)[1]
+    if(is.na(i)) {
+      return(NA)
+    }
+    v <- vals[max(1, i-midf+1):min(length(vals), i+length(filter)-midf)] 
+    f <- filter[max(1, midf-i+1):min(length(filter), midf + length(d) - i)]
+    if(normalize) {
+      f <- f/sum(f)
+    }
+    sum(v * f)
+  })
 }
 
-sliced <- models %>% group_by(slicesize, coeff) %>% do(extrude(unique(.$slicesize), .$density))
+# test of the filtering function
+# set.seed(2000)
+# vals <- rnorm(100)
+# f <- c(1, 2, 3, 4, 1)
+# plot(vals, type="l")
+# newvals <- custom_filter(1:100, vals, f)
+# lines(newvals, col="red")
+# lines(stats::filter(vals, f/sum(f)), col="green") # is not exact but close
+# newds <- c(1, 10, 20, 40, 60, 80, 100)
+# points(newds, custom_filter(1:100, vals, f, newds)) # points are exactly on the red lines
+
+# define function to "smooth" the data and section it, producing a new dataframe of d/vals cols
+# still need to check this
+extrude <- function(original_data, slice_size, filter) {
+  # make new slices
+  out <- data.frame(d=seq(0+slice_size/2, max(original_data$d0), slice_size))
+  # filter
+  out$vals <- custom_filter(original_data$d0, original_data$vals, filter=filter, newds=out$d)
+  return(out)
+}
+
+sliced <- models %>% 
+  group_by(slicesize, coeff) %>% 
+  do(extrude(original_data, unique(.$slicesize), .$density))
 
 ggplot(sliced, aes(y=d, x=vals)) + geom_path() + scale_y_reverse() + 
   facet_grid(slicesize ~ coeff, scales="free_x")
