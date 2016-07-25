@@ -7,7 +7,9 @@ library(dplyr)
 Introduction
 ------------
 
-That deformation and compression of lake sediment occurs during coring has long been known (Martin and Miller 1982; Wright 1993), and designs of new coring devices have strived to minimize the conditions that promote deformation during coring (Martin and Miller 1982; Lane and Tafts 2002). Compression of sediment occurs during coring is a widely accepted phenomenon (Glew et al. 2001), however convex upwards deformation, while widely observed (citations including Wright 1993; Rosenbaum et al. 2010; Figure 1), is infrequently discussed. The idea that horizontal sectioning (extrusion) of deformed sediment is undesirable has been previously noted (Rosenbaum et al. 2010), however the degree to which this deformation occurs and the effect that deformation has on paleolimnological data derived from horizontal sectioning has never been investigated quantitatively. Rather than suggest that deformation does not occur (Glew et al. 2001 Figure 3), or that a particular coring method prevents this from happening (Smol 2009 p35), we suggest that acknowledging deformation and its effect on paleolimnological data is a more reasonable approach. We suspect, given the innumerable paleolimnological studies that use coring and extrusion to produce reasonable and reproducable results, that either deformation or its effect on the data is minimal. This paper is our attempt to quantify and constrain the degree to which convex upwards deformation adds bias to horizontally sectioned paleolimnological data.
+That deformation and compression of lake sediment occurs during coring has long been known (Martin and Miller 1982; Wright 1993), and designs of new coring devices have strived to minimize the conditions that promote deformation during coring (Martin and Miller 1982; Lane and Tafts 2002). Compression of sediment occurs during coring is a widely accepted phenomenon (Glew et al. 2001), however convex upwards deformation, while widely observed (citations including Wright 1993; Rosenbaum et al. 2010; Figure 1), is infrequently discussed. The idea that horizontal sectioning (extrusion) of deformed sediment is undesirable has been previously noted (Rosenbaum et al. 2010), however the degree to which this deformation occurs and the effect that deformation has on paleolimnological data derived from horizontal sectioning has never been investigated quantitatively.
+
+Rather than suggest that deformation does not occur (Glew et al. 2001 Figure 3), or that a particular coring method prevents this from happening (Smol 2009 p35), we suggest that acknowledging deformation and its effect on paleolimnological data is a more reasonable approach. We suspect, given the innumerable paleolimnological studies that use coring and extrusion to produce reasonable and reproducable results, that either deformation or its effect on the data is minimal. This paper is our attempt to quantify and constrain the degree to which convex upwards deformation adds bias to horizontally sectioned paleolimnological data.
 
 If we take a slice through a deformed core (as we would while extruding), what is the distribution of original depths? What is the effect of typical deformation on data obtained from extruded samples? What is the effect of maximum likely deformation in extruded samples? Is there a minimum extrusion interval based on typical deformation in sediment cores?
 
@@ -20,7 +22,7 @@ Methods
 # define parameters
 barrel_width <- 6 # use 8 cm for barrel width
 slice_sizes <- c(0.1, 0.5, 1)
-cellsize <- 0.025
+cellsize <- 0.1
 ```
 
 ### Core photo analysis
@@ -35,19 +37,40 @@ We modeled horizontal sections with height `H` and diameter `D` as a 3-dimension
 
 ### Effect on paleolimnological data
 
+To model the concentration we would obtain by sectioning and homogenizing a sample with variable concentration (`c`) and density (`sigma`), we need to calculate total mass of the target substance divided by the mass of the slice. In sigma notation with our deformation model (using `n` cells), this looks like the following:
+
+![](figs/math1.jpg)
+
+Because the volume for each cell is constant, we can remove the `Vi` from the summation in both the numerator and denominator. Thus we are left with:
+
+![](figs/math2.jpg)
+
+Our initial assumption is that `c` and `sigma` are a function of (and constatnt for each) `d0i`, our notation collapses to:
+
+![](figs/math3.jpg)
+
+Thus we can use our deformation model to simulate the effect of core barrel width, horizontal sectioning interval, and degree of deformation, on idealized high-resolution data. We used fictional paleolimnological data (random log-normal data) to visualize the effect of deformation on stratigraphic data. These data were inspired by ITRAX core scanner data that has a high sample resolution.
+
 ``` r
 # generate data at resolution cellsize/2 (200 samples for 20 cm). smooth random normal data
 set.seed(2500)
-original_data <- data.frame(d0=seq(0, 20, cellsize), vals=rnorm(20/cellsize+1))
+original_data <- data.frame(d0=seq(0, 20, cellsize), vals=rlnorm(20/cellsize+1))
+original_data$vals <- 1.5 ^ original_data$vals * 10
 smoothing = 10
 for(s in 1:smoothing) {
   original_data$vals <- ksmooth(original_data$d0, original_data$vals, bandwidth=0.1)$y
 }
+# define density for each (produces curve from 0.1 to 0.5 ish)
+original_data$density <- (original_data$d0 * (5-1) / 20 + 1) * 0.1
 
 # ggplot(original_data, aes(y=d0, x=vals)) + geom_path() + scale_y_reverse()
-```
 
-We used density histograms as a smoothing filter on fictional paleolimnological data to visualize the effect of deformation on stratigraphic data. These data were fictional (smoothed random normal data) but inspired by ITRAX core scanner data (1 mm sample resolution).
+original_data_params <- function(d0, tol=1e-13) {
+    return(original_data[sapply(d0, function(x) {
+      which(abs(original_data$d0-x) < tol)[1]
+    }),])
+}
+```
 
 Results
 -------
@@ -147,16 +170,16 @@ knitr::kable(modelparams, digits=2)
 
 # output is a data.frame with columsn x, y, z, r, and d0 (which we should refactor to oi...)
 
-deformation_model3d <- function(slicesize, d0, width=2, cellsize=0.025, stat=NULL) {
+deformation_model3d <- function(slicesize, d0, width=2, cellsize=0.025, snap=NULL) {
+  if(is.null(snap)) {
+    snap <- cellsize
+  }
   coords <- expand.grid(x=seq(-width/2, width/2, cellsize),
                         y=seq(-width/2, width/2, cellsize),
                         z=seq(-slicesize/2, slicesize/2, cellsize))
   coords$r <- sqrt(coords$x^2 + coords$y^2)
   coords <- coords[coords$r <= width/2,]
-  coords$d0 <- d0(coords$z, coords$r)
-  if(!is.null(stat)) {
-    coords[["stat"]] <- stat(coords$d0)
-  }
+  coords$d0 <- floor(d0(coords$z, coords$r) / cellsize) * cellsize
   return(coords)
 }
 
@@ -224,55 +247,26 @@ Smoothing effects on stratigraphic data
 The distribution (density) acts as a smoothing filter on geochem data.
 
 ``` r
-# we need a custom filter function because stats::filter() doesn't do the ends properly
-custom_filter <- function(d, vals, filter, newds=NULL, normalize=TRUE, tol=1e-13) {
-  if(length(d) != length(vals)) stop("Length of ds must be equal to length of vals")
-  midf <- floor(length(filter) / 2) + 1
-  if(is.null(newds)) {
-    newds <- d
-  }
-  sapply(newds, function(x) {
-    i <- which(abs(d-x) < tol)[1]
-    if(is.na(i)) {
-      return(NA)
-    }
-    v <- vals[max(1, i-midf+1):min(length(vals), i+length(filter)-midf)] 
-    f <- filter[max(1, midf-i+1):min(length(filter), midf + length(d) - i)]
-    if(normalize) {
-      f <- f/sum(f)
-    }
-    sum(v * f)
-  })
+# we need a function that simulates figs/math3.jpg
+extrude <- function(model, paramsfunc, slice_size) {
+    out <- data.frame(d=seq(0+slice_size/2, max(original_data$d0), slice_size))
+    out$vals <- sapply(out$d, function(deltad0) {
+      params <- paramsfunc(model$d0 + deltad0)
+      params <- params[!is.na(params$d0),] # NAs are an issue for the first/last slices
+      return(sum(params$vals * params$density) / sum(params$density))
+    })
+    out
 }
 
-# test of the filtering function
-# set.seed(2000)
-# vals <- rnorm(100)
-# f <- c(1, 2, 3, 4, 1)
-# plot(vals, type="l")
-# newvals <- custom_filter(1:100, vals, f)
-# lines(newvals, col="red")
-# lines(stats::filter(vals, f/sum(f)), col="green") # is not exact but close
-# newds <- c(1, 10, 20, 40, 60, 80, 100)
-# points(newds, custom_filter(1:100, vals, f, newds)) # points are exactly on the red lines
-
-# define function to "smooth" the data and section it, producing a new dataframe of d/vals cols
-# still need to check this
-extrude <- function(original_data, slice_size, filter) {
-  # make new slices
-  out <- data.frame(d=seq(0+slice_size/2, max(original_data$d0), slice_size))
-  # filter
-  out$vals <- custom_filter(original_data$d0, original_data$vals, filter=filter, newds=out$d)
-  return(out)
-}
-
-sliced <- models %>% 
+sliced <- all %>%
   group_by(slicesize, coeff) %>% 
-  do(extrude(original_data, unique(.$slicesize), .$density))
+  do(extrude(., original_data_params, unique(.$slicesize)))
 
 ggplot(sliced, aes(y=d, x=vals)) + geom_path() + scale_y_reverse() + 
   facet_grid(slicesize ~ coeff, scales="free_x")
 ```
+
+    ## Warning: Removed 960 rows containing missing values (geom_path).
 
 ![](README_files/figure-markdown_github/unnamed-chunk-7-1.png)
 
