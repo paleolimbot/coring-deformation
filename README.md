@@ -54,7 +54,7 @@ Thus we can use our deformation model to simulate the effect of core barrel widt
 ``` r
 # generate data at resolution cellsize/2 (200 samples for 20 cm). smooth random normal data
 set.seed(2500)
-original_data <- data.frame(d0=seq(0, 20, cellsize), vals=rlnorm(20/cellsize+1))
+original_data <- data.frame(d0=seq(0, 20, cellsize/2), vals=rlnorm(20/cellsize*2+1))
 original_data$vals <- 1.5 ^ original_data$vals * 10
 smoothing = 10
 for(s in 1:smoothing) {
@@ -265,8 +265,6 @@ sliced <- all %>%
 ggplot(sliced, aes(y=d, x=vals)) + geom_path() + scale_y_reverse() + 
   facet_grid(slicesize ~ coeff, scales="free_x")
 ```
-
-    ## Warning: Removed 960 rows containing missing values (geom_path).
 
 ![](README_files/figure-markdown_github/unnamed-chunk-7-1.png)
 
