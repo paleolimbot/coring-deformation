@@ -91,7 +91,7 @@ ggplot(deformed_layer_data, aes(x=r, y=d)) +
   scale_y_reverse() + facet_wrap(~photo, scales="free")
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-5-1.png)<!-- -->
+![](README_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
 ``` r
 # these are used in the model later
@@ -160,7 +160,7 @@ ggplot(all %>% filter(abs(z)==min(abs(z)), slicesize==all$slicesize[1]), aes(x=x
   coord_fixed() + facet_wrap(~coeff)
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-7-1.png)<!-- -->
+![](README_files/figure-markdown_github/unnamed-chunk-7-1.png)
 
 ``` r
 # side on view
@@ -169,7 +169,7 @@ ggplot(all %>% filter(abs(y)==min(abs(y))), aes(x=x, y=z)) + geom_raster(aes(fil
   coord_fixed() + facet_grid(slicesize ~ coeff)
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-7-2.png)<!-- -->
+![](README_files/figure-markdown_github/unnamed-chunk-7-2.png)
 
 ``` r
 # create histograms with binwidth of cellsize, except with the $density param)
@@ -191,7 +191,7 @@ ggplot(histograms %>% filter(density != 0), aes(x=d, y=density)) +
   facet_grid(slicesize ~ coeff)
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-7-3.png)<!-- -->
+![](README_files/figure-markdown_github/unnamed-chunk-7-3.png)
 
 ### Effect on stratigraphic data
 
@@ -206,7 +206,7 @@ ggplot(sliced, aes(y=d, x=vals)) + geom_path() + scale_y_reverse() +
   facet_grid(slicesize ~ coeff, scales="free_x")
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-8-1.png)<!-- -->
+![](README_files/figure-markdown_github/unnamed-chunk-8-1.png)
 
 Conclusions
 -----------
