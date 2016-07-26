@@ -10,7 +10,7 @@ output:
 ```{r, message=FALSE, warning=FALSE}
 library(ggplot2)
 library(dplyr)
-source("funcs/deformation_library.R")
+source("R/deformation_library.R")
 ```
 
 ## Introduction
