@@ -15,14 +15,13 @@ deformations <- foreach::foreach(layer=layer_files, .combine=rbind) %do% {
 rm(df, layer, layer_files)
 
 deformed_core_photos <- read.csv("data-raw/photos/photo_info.csv")
-
+deformations <- merge(deformations, deformed_core_photos, by="photo")
+deformations$x <- deformations$x / deformations$scale
+deformations$y <- deformations$y / deformations$scale
 layers <- deformations %>% 
   group_by(layercode) %>% 
   summarise(x0=mean(range(x)), y0=min(y))
 deformations <- merge(deformations, layers, by="layercode")
-deformations <- merge(deformations, deformed_core_photos, by="photo")
-deformations$x <- deformations$x / deformations$scale
-deformations$y <- deformations$y / deformations$scale
 deformations$r <- deformations$x-deformations$x0
 deformations$d <- deformations$y-deformations$y0
 deformations <- deformations %>% select(layercode, photo, layer, r, d)

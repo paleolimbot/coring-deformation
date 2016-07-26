@@ -1,7 +1,8 @@
 ``` r
 library(ggplot2)
 library(dplyr)
-source("funcs/deformation_library.R")
+source("R/deformation_library.R") # functions
+source("data-raw/collect_layers.R") # layers data
 ```
 
 Introduction
@@ -27,7 +28,21 @@ cellsize <- 0.1
 
 ### Core photo analysis
 
-To calculate parameters for the deformation model, we loaded XXX scale photos of deformed cores into ImageJ software and digitized deformed strata. Coordinates were transformed to `ri` and `di` values for individual strata by subtracting the minimum `d` value from the rest of the values, and subtracting the average `x` value from the rest of the values. Power regression (quadratic) was performed on the data to obtain the coefficients for minimum, maximum, and mean levels of deformation. Corer type and core barrel diameter were recorded with these data.
+To calculate parameters for the deformation model, we loaded 7 scale photos of deformed cores from 3 sources into ImageJ software and digitized deformed strata (Table 1). Coordinates were transformed to `ri` and `di` values for individual strata by subtracting the minimum `d` value from the rest of the values, and subtracting the central `x` value from the rest of the values. Power regression (quadratic) was performed on the data to obtain the coefficients for minimum, maximum, and mean levels of deformation. Corer type and core barrel diameter were recorded with these data.
+
+``` r
+knitr::kable(deformed_core_photos, digits=2)
+```
+
+| photo            |   scale| reference                |
+|:-----------------|-------:|:-------------------------|
+| longlake\_pc1    |  102.60| White 2012               |
+| menounos\_cheak1 |   88.00| Menounos and Clague 2008 |
+| menounos\_cheak2 |   46.00| Menounos and Clague 2008 |
+| suzielake\_1     |   47.03| Spooner et al. 1997      |
+| suzielake\_2     |   26.70| Spooner et al. 1997      |
+| whistler\_gc4    |  290.25| Dunnington 2015          |
+| whistler\_gc8    |  310.23| Dunnington 2015          |
 
 ### Deformation model
 
@@ -69,81 +84,54 @@ Results
 ![pictures of deformed cores](deformed%20cores/def_cores_summaryfig.png)
 
 ``` r
-# load
-deformations <- read.csv("deformed cores/deformed_cores_summary.csv")
-# calc the x0 and y0 to use as the base coordinates (to transform x and y to r and d)
-layers <- deformations %>% 
-  group_by(layercode) %>% 
-  summarise(x0=mean(range(x)), y0=min(y))
-deformations <- merge(deformations, layers, by="layercode")
-deformations$r <- deformations$x-deformations$x0
-deformations$d <- deformations$y-deformations$y0
-deformations <- deformations %>% select(layercode, core, layer, r, d)
-
 # plot cores with quadratic smoothing
-ggplot(deformations, aes(x=r, y=d)) + 
+ggplot(deformed_layer_data, aes(x=r, y=d)) + 
   geom_point(aes(col=factor(layer))) + 
   stat_smooth(method=lm, formula=y ~ poly(x, 2, raw=TRUE), se=FALSE) + 
-  scale_y_reverse() + facet_wrap(~core, scales="free")
+  scale_y_reverse() + facet_wrap(~photo, scales="free")
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-4-1.png)
+![](README_files/figure-markdown_github/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
-# define the regression function
-create_quadratic_model <- function(df) {
-  model <- lm(data=df, formula=d ~ poly(r, 2, raw=TRUE))
-  return(data.frame(a=model$coefficients[3],
-                    r2=summary(model)$r.squared,
-                    df=model$df.residual))
-}
-
-# calculate quadratic models
-modelparams <- deformations %>% 
-  group_by(layercode) %>%
-  do(create_quadratic_model(.))
-
 # these are used in the model later
-mina <- round(min(modelparams$a), 3)
-maxa <- round(max(modelparams$a), 2)
-meana <- round(mean(modelparams$a), 2)
+mina <- round(min(deformed_layers$a), 3)
+maxa <- round(max(deformed_layers$a), 2)
+meana <- round(mean(deformed_layers$a), 2)
 coeffs <- c(0, mina, meana, maxa)
 ```
 
-We digitized 26 deformed layers from 7 scale photos of split cores. The quadratic regression performed produced an excellent fit of the data (r2 from 0.83 to 1). Coefficients for `x^2` range from 0.083 to 0.51, with a mean of 0.25.
+We digitized 0 deformed layers from 0 scale photos of split cores. The quadratic regression performed produced an excellent fit of the data (r2 from 0.83 to 1). Coefficients for `x^2` range from 0.101 to 0.51, with a mean of 0.26.
 
 ``` r
-knitr::kable(modelparams, digits=2)
+knitr::kable(deformed_layers, digits=2)
 ```
 
 | layercode          |     a|    r2|   df|
 |:-------------------|-----:|-----:|----:|
-| longlake\_pc1/1    |  0.51|  0.87|   17|
-| menounos\_cheak1/1 |  0.28|  0.94|    6|
-| menounos\_cheak1/2 |  0.20|  0.95|    9|
-| menounos\_cheak1/3 |  0.16|  0.93|    9|
-| menounos\_cheak1/4 |  0.13|  0.85|    8|
-| menounos\_cheak1/5 |  0.15|  0.87|    8|
-| menounos\_cheak1/6 |  0.17|  0.92|    7|
-| menounos\_cheak1/7 |  0.18|  0.99|    5|
-| menounos\_cheak1/8 |  0.14|  0.92|    9|
-| menounos\_cheak2/1 |  0.30|  0.99|    6|
-| menounos\_cheak2/2 |  0.40|  1.00|    7|
-| menounos\_cheak2/3 |  0.37|  1.00|    8|
-| menounos\_cheak2/4 |  0.29|  0.96|    6|
-| menounos\_cheak2/5 |  0.38|  0.99|    7|
-| menounos\_cheak2/6 |  0.38|  0.99|    7|
-| menounos\_cheak2/7 |  0.24|  0.96|    6|
-| menounos\_cheak2/8 |  0.26|  0.99|    6|
-| sl2/1              |  0.13|  0.98|    8|
-| sl2/2              |  0.12|  0.99|   11|
-| sl2/3              |  0.08|  0.96|    9|
-| suzie1/1           |  0.16|  0.93|    7|
-| suzie1/2           |  0.27|  0.83|   11|
-| suzie1/3           |  0.39|  1.00|   12|
-| suzie1/4           |  0.45|  0.93|   15|
-| whistler\_gc4/1    |  0.16|  0.99|    8|
-| whistler\_gc8/1    |  0.10|  1.00|    9|
+| longlake\_pc1.1    |  0.51|  0.87|   17|
+| menounos\_cheak1.1 |  0.28|  0.94|    6|
+| menounos\_cheak1.2 |  0.20|  0.95|    9|
+| menounos\_cheak1.3 |  0.16|  0.93|    9|
+| menounos\_cheak1.4 |  0.13|  0.85|    8|
+| menounos\_cheak1.5 |  0.15|  0.87|    8|
+| menounos\_cheak1.6 |  0.17|  0.92|    7|
+| menounos\_cheak1.7 |  0.18|  0.99|    5|
+| menounos\_cheak1.8 |  0.14|  0.92|    9|
+| menounos\_cheak2.1 |  0.30|  0.99|    6|
+| menounos\_cheak2.2 |  0.40|  1.00|    7|
+| menounos\_cheak2.3 |  0.37|  1.00|    8|
+| menounos\_cheak2.4 |  0.29|  0.96|    6|
+| menounos\_cheak2.5 |  0.38|  0.99|    7|
+| menounos\_cheak2.6 |  0.38|  0.99|    7|
+| menounos\_cheak2.7 |  0.24|  0.96|    6|
+| menounos\_cheak2.8 |  0.26|  0.99|    6|
+| suzielake\_1.1     |  0.16|  0.93|    7|
+| suzielake\_1.2     |  0.27|  0.83|   11|
+| suzielake\_1.3     |  0.39|  1.00|   12|
+| suzielake\_1.4     |  0.45|  0.93|   15|
+| whistler\_gc4.1    |  0.16|  0.99|    8|
+| whistler\_gc8.1    |  0.10|  1.00|    9|
 
 ### Deformation model
 
@@ -153,7 +141,6 @@ params <- expand.grid(slicesize=slice_sizes, coeff=coeffs)
 
 # define a wrapper function that will create the model based on the
 # parameters we would like to vary
-# include stat of concentration of our value
 deformation_model_wrapper <- function(slicesize, coeff) {
   deformation_model(slicesize, 
                       d0=function(d, r) d - coeff * r^2, 
@@ -173,7 +160,7 @@ ggplot(all %>% filter(abs(z)==min(abs(z)), slicesize==all$slicesize[1]), aes(x=x
   coord_fixed() + facet_wrap(~coeff)
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-6-1.png)
+![](README_files/figure-markdown_github/unnamed-chunk-7-1.png)<!-- -->
 
 ``` r
 # side on view
@@ -182,7 +169,7 @@ ggplot(all %>% filter(abs(y)==min(abs(y))), aes(x=x, y=z)) + geom_raster(aes(fil
   coord_fixed() + facet_grid(slicesize ~ coeff)
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-6-2.png)
+![](README_files/figure-markdown_github/unnamed-chunk-7-2.png)<!-- -->
 
 ``` r
 # create histograms with binwidth of cellsize, except with the $density param)
@@ -204,12 +191,11 @@ ggplot(histograms %>% filter(density != 0), aes(x=d, y=density)) +
   facet_grid(slicesize ~ coeff)
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-6-3.png)
+![](README_files/figure-markdown_github/unnamed-chunk-7-3.png)<!-- -->
 
-Effect on stratigraphic data
-----------------------------
+### Effect on stratigraphic data
 
-The distribution (density) acts as a smoothing filter on geochem data.
+Using the formulas, if we model extrusion, this is the effect on the data:
 
 ``` r
 sliced <- all %>%
@@ -220,9 +206,9 @@ ggplot(sliced, aes(y=d, x=vals)) + geom_path() + scale_y_reverse() +
   facet_grid(slicesize ~ coeff, scales="free_x")
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-7-1.png)
+![](README_files/figure-markdown_github/unnamed-chunk-8-1.png)<!-- -->
 
 Conclusions
 -----------
 
-There is a limit to how small extrusion intervals can get based on deformation (flat topped distributions are bad because they don't have a 'mode' depth that they represent!).
+There is a limit to how small extrusion intervals can get based on deformation. For minor deformation, even small extrusion intervals are ok.

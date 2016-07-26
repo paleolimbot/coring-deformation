@@ -36,7 +36,11 @@ cellsize <- 0.1
 
 ### Core photo analysis
 
-To calculate parameters for the deformation model, we loaded XXX scale photos of deformed cores into ImageJ software and digitized deformed strata. Coordinates were transformed to `ri` and `di` values for individual strata by subtracting the minimum `d` value from the rest of the values, and subtracting the average `x` value from the rest of the values. Power regression (quadratic) was performed on the data to obtain the coefficients for minimum, maximum, and mean levels of deformation. Corer type and core barrel diameter were recorded with these data.
+To calculate parameters for the deformation model, we loaded `r nrow(deformed_core_photos)` scale photos of deformed cores from `r length(unique(deformed_core_photos))` sources into ImageJ software and digitized deformed strata (Table 1). Coordinates were transformed to `ri` and `di` values for individual strata by subtracting the minimum `d` value from the rest of the values, and subtracting the central `x` value from the rest of the values. Power regression (quadratic) was performed on the data to obtain the coefficients for minimum, maximum, and mean levels of deformation. Corer type and core barrel diameter were recorded with these data.
+
+```{r, results='asis'}
+knitr::kable(deformed_core_photos, digits=2)
+```
 
 ### Deformation model
 
@@ -79,12 +83,10 @@ original_data <- create_random_data(seed=2500, smoothing=10, func=rlnorm,
 
 ```{r}
 # plot cores with quadratic smoothing
-ggplot(deformed_core_photos, aes(x=r, y=d)) + 
+ggplot(deformed_layer_data, aes(x=r, y=d)) + 
   geom_point(aes(col=factor(layer))) + 
   stat_smooth(method=lm, formula=y ~ poly(x, 2, raw=TRUE), se=FALSE) + 
   scale_y_reverse() + facet_wrap(~photo, scales="free")
-
-
 
 # these are used in the model later
 mina <- round(min(deformed_layers$a), 3)
@@ -108,7 +110,6 @@ params <- expand.grid(slicesize=slice_sizes, coeff=coeffs)
 
 # define a wrapper function that will create the model based on the
 # parameters we would like to vary
-# include stat of concentration of our value
 deformation_model_wrapper <- function(slicesize, coeff) {
   deformation_model(slicesize, 
                       d0=function(d, r) d - coeff * r^2, 
@@ -151,9 +152,9 @@ ggplot(histograms %>% filter(density != 0), aes(x=d, y=density)) +
   facet_grid(slicesize ~ coeff)
 ```
 
-## Effect on stratigraphic data
+### Effect on stratigraphic data
 
-The distribution (density) acts as a smoothing filter on geochem data.
+Using the formulas, if we model extrusion, this is the effect on the data:
 
 ```{r}
 sliced <- all %>%
@@ -167,4 +168,4 @@ ggplot(sliced, aes(y=d, x=vals)) + geom_path() + scale_y_reverse() +
 
 ## Conclusions
 
-There is a limit to how small extrusion intervals can get based on deformation (flat topped distributions are bad because they don't have a 'mode' depth that they represent!).
+There is a limit to how small extrusion intervals can get based on deformation. For minor deformation, even small extrusion intervals are ok.
