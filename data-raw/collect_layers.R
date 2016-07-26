@@ -1,8 +1,8 @@
 
-library(foreach)
+`%do%` <- foreach::`%do%`
 
 layers <- list.files("data-raw/layers", pattern=".csv", full.names=TRUE)
-deformed_layers <- foreach(layer=layers, .combine=rbind) %do% {
+deformed_layers <- foreach::foreach(layer=layers, .combine=rbind) %do% {
   df <- read.csv(layer)
   names(df) <- c("x", "y")
   layer <- basename(layer)
@@ -12,15 +12,5 @@ deformed_layers <- foreach(layer=layers, .combine=rbind) %do% {
   df
 }
 
+deformed_core_photos <- read.csv("data-raw/photos/photo_info.csv")
 
-photos <- read.csv("data-raw/photos/photo_info.csv")
-
-
-foreach(photo=photos) %do% {
-  ls <- deformations %>% filter(core == photo)
-  scale <- photos$scale[photos$photo == photo]
-  browser()
-  ls$x <- ls$x * scale
-  ls$y <- ls$y * scale
-  knitr::kable(ls)
-}
