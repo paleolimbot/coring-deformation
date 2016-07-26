@@ -9,8 +9,8 @@ output:
 
 ```{r, message=FALSE, warning=FALSE}
 library(ggplot2)
-library(reshape2)
 library(dplyr)
+source("funcs/deformation_library.R")
 ```
 
 ## Introduction
@@ -27,7 +27,7 @@ If we take a slice through a deformed core (as we would while extruding), what i
 
 ```{r}
 # define parameters
-barrel_width <- 6 # use 8 cm for barrel width
+barrel_width <- 6 # use 6 cm for barrel width
 slice_sizes <- c(0.1, 0.5, 1)
 cellsize <- 0.1
 ```
@@ -39,13 +39,13 @@ To calculate parameters for the deformation model, we loaded XXX scale photos of
 
 ### Deformation model
 
-We modeled horizontal sections with height `H` and diameter `D` as a 3-dimensional raster grid with a cell size of 0.25 mm (Figure 2). For each cell `i`, an original depth `oi` was calculated with the minimum, maximum, and mean parameters obtained from digitized strata. Density histograms were then obtained to estimate the percentage contribution of each original depth `o` to the slice. For each slice, `d=0` refers to the middle of the slice. We produced these models for `D`=8 cm, as this represents a frequently used barrel diameter for horizontally sectioned cores.
+We modeled horizontal sections with height `H` and diameter `D` as a 3-dimensional raster grid with a cell size of 0.25 mm (Figure 2). For each cell `i`, an original depth `d0i` was calculated with the minimum, maximum, and mean parameters obtained from digitized strata. Density histograms were then obtained to estimate the percentage contribution of each original depth `d0` to the slice. For each slice, `d=0` refers to the middle of the slice. We produced these models for `D`=`r barrel_width` cm, as this represents a frequently used barrel diameter for horizontally sectioned cores.
 
 ![model vars](figs/fig2_deformation_vars.png)
 
 ### Effect on paleolimnological data
 
-To model the concentration we would obtain by sectioning and homogenizing a sample with variable concentration (`c`) and density (`sigma`), we need to calculate total mass of the target substance divided by the mass of the slice. In sigma notation with our deformation model (using `n` cells), this looks like the following:
+To model the concentration we would obtain by sectioning and homogenizing a sample with variable concentration (`c`) and density (`density`), we need to calculate total mass of the target substance divided by the mass of the slice. In sigma notation with our deformation model (using `n` cells), this looks like the following:
 
 ![](figs/math1.jpg)
 
@@ -53,31 +53,20 @@ Because the volume for each cell is constant, we can remove the `Vi` from the su
 
 ![](figs/math2.jpg)
 
-Our initial assumption is that `c` and `sigma` are a function of (and constatnt for each) `d0i`, our notation collapses to:
+Our initial assumption is that `c` and `density` are a function of (and constatnt for each) `d0i`, our notation collapses to:
 
 ![](figs/math3.jpg)
 
 Thus we can use our deformation model to simulate the effect of core barrel width, horizontal sectioning interval, and degree of deformation, on idealized high-resolution data. We used fictional paleolimnological data (random log-normal data) to visualize the effect of deformation on stratigraphic data. These data were inspired by ITRAX core scanner data that has a high sample resolution.
 
 ```{r}
-# generate data at resolution cellsize/2 (200 samples for 20 cm). smooth random normal data
-set.seed(2500)
-original_data <- data.frame(d0=seq(0, 20, cellsize/2), vals=rlnorm(20/cellsize*2+1))
-original_data$vals <- 1.5 ^ original_data$vals * 10
-smoothing = 10
-for(s in 1:smoothing) {
-  original_data$vals <- ksmooth(original_data$d0, original_data$vals, bandwidth=0.1)$y
-}
-# define density for each (produces curve from 0.1 to 0.5 ish)
-original_data$density <- (original_data$d0 * (5-1) / 20 + 1) * 0.1
+# generate data
+original_data <- create_random_data(seed=2500, smoothing=10, func=rlnorm,
+                                    transform=function(x) 1.5 ^ x * 10,
+                                    density=c(0.1, 0.5),
+                                    maxdepth=20, cellsize=cellsize)
 
 # ggplot(original_data, aes(y=d0, x=vals)) + geom_path() + scale_y_reverse()
-
-original_data_params <- function(d0, tol=1e-13) {
-    return(original_data[sapply(d0, function(x) {
-      which(abs(original_data$d0-x) < tol)[1]
-    }),])
-}
 ```
 
 
@@ -135,30 +124,6 @@ knitr::kable(modelparams, digits=2)
 ### Deformation model
 
 ```{r}
-# This function takes a `slicesize` (for example, 1 cm) and a function `d0` that
-# returns a the original depth prior to deformation given a depth (`d`) and a
-# radius from the centre of the core (`r`). The `cellsize` parameter specifies
-# the resolution at which to create the model (low values for higher resolution)
-# and the `width` specifies the interior diameter of the core barrel. The `d`
-# values in the model are relative to the centre of the slice. For a single
-# function `d0` and slice size, we can then plot a cross-section and histogram
-# of the depths prior to deformation.
-
-# output is a data.frame with columsn x, y, z, r, and d0 (which we should refactor to oi...)
-
-deformation_model3d <- function(slicesize, d0, width=2, cellsize=0.025, snap=NULL) {
-  if(is.null(snap)) {
-    snap <- cellsize
-  }
-  coords <- expand.grid(x=seq(-width/2, width/2, cellsize),
-                        y=seq(-width/2, width/2, cellsize),
-                        z=seq(-slicesize/2, slicesize/2, cellsize))
-  coords$r <- sqrt(coords$x^2 + coords$y^2)
-  coords <- coords[coords$r <= width/2,]
-  coords$d0 <- floor(d0(coords$z, coords$r) / cellsize) * cellsize
-  return(coords)
-}
-
 # expand to grid
 params <- expand.grid(slicesize=slice_sizes, coeff=coeffs)
 
@@ -166,7 +131,7 @@ params <- expand.grid(slicesize=slice_sizes, coeff=coeffs)
 # parameters we would like to vary
 # include stat of concentration of our value
 deformation_model_wrapper <- function(slicesize, coeff) {
-  deformation_model3d(slicesize, 
+  deformation_model(slicesize, 
                       d0=function(d, r) d - coeff * r^2, 
                       width = barrel_width, 
                       cellsize = cellsize)
@@ -188,8 +153,8 @@ ggplot(all %>% filter(abs(y)==min(abs(y))), aes(x=x, y=z)) + geom_raster(aes(fil
   scale_fill_gradient2() + scale_y_reverse() + 
   coord_fixed() + facet_grid(slicesize ~ coeff)
 
-# create smoothing models (histograms with binwidth of cellsize, except with the $density param)
-create_smoothing_model <- function(vals) {
+# create histograms with binwidth of cellsize, except with the $density param)
+create_histogram <- function(vals) {
   limit <- round(max(abs(vals)) / cellsize) * cellsize #snap to cellsize
   breaks <- seq(-limit-cellsize, limit+cellsize, cellsize)
   h <- hist(vals, breaks=breaks, plot=FALSE)
@@ -197,35 +162,24 @@ create_smoothing_model <- function(vals) {
   return(data.frame(d=breaks[-1], density=h$density))
 }
 
-models <- all %>% 
+histograms <- all %>% 
   group_by(slicesize, coeff) %>% 
-  do(create_smoothing_model(.$d0))
+  do(create_histogram(.$d0))
 
 # plot (same as density histogram but this is faster)
-ggplot(models %>% filter(density != 0), aes(x=d, y=density)) + 
+ggplot(histograms %>% filter(density != 0), aes(x=d, y=density)) + 
   geom_bar(width=cellsize, stat="identity") + 
   facet_grid(slicesize ~ coeff)
 ```
 
-## Smoothing effects on stratigraphic data
+## Effect on stratigraphic data
 
 The distribution (density) acts as a smoothing filter on geochem data.
 
 ```{r}
-# we need a function that simulates figs/math3.jpg
-extrude <- function(model, paramsfunc, slice_size) {
-    out <- data.frame(d=seq(0+slice_size/2, max(original_data$d0), slice_size))
-    out$vals <- sapply(out$d, function(deltad0) {
-      params <- paramsfunc(model$d0 + deltad0)
-      params <- params[!is.na(params$d0),] # NAs are an issue for the first/last slices
-      return(sum(params$vals * params$density) / sum(params$density))
-    })
-    out
-}
-
 sliced <- all %>%
   group_by(slicesize, coeff) %>% 
-  do(extrude(., original_data_params, unique(.$slicesize)))
+  do(extrude(., original_data))
 
 ggplot(sliced, aes(y=d, x=vals)) + geom_path() + scale_y_reverse() + 
   facet_grid(slicesize ~ coeff, scales="free_x")
