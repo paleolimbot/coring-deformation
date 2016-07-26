@@ -10,12 +10,13 @@ output:
 ```{r, message=FALSE, warning=FALSE}
 library(ggplot2)
 library(dplyr)
-source("R/deformation_library.R")
+source("R/deformation_library.R") # functions
+source("data-raw/collect_layers.R") # layers data
 ```
 
 ## Introduction
 
-That deformation and compression of lake sediment occurs during coring has long been known (Martin and Miller 1982; Wright 1993), and designs of new coring devices have strived to minimize the conditions that promote deformation during coring (Martin and Miller 1982; Lane and Tafts 2002). Compression of sediment occurs during coring is a widely accepted phenomenon (Glew et al. 2001), however convex upwards deformation, while widely observed (citations including Wright 1993; Rosenbaum et al. 2010; Figure 1), is infrequently discussed. The idea that horizontal sectioning (extrusion) of deformed sediment is undesirable has been previously noted (Rosenbaum et al. 2010), however the degree to which this deformation occurs and the effect that deformation has on paleolimnological data derived from horizontal sectioning has never been investigated quantitatively. 
+That deformation and compression of lake sediment occurs during coring has long been known (Martin and Miller 1982; Wright 1993), and designs of new coring devices have strived to minimize the conditions that promote deformation during coring (Martin and Miller 1982; Lane and Tafts 2002). Compression of sediment occurs during coring is a widely accepted phenomenon (Glew et al. 2001), however convex upwards deformation, while widely observed (citations including Wright 1993; Rosenbaum et al. 2010; Figure 1), is infrequently discussed. The idea that horizontal sectioning (extrusion) of deformed sediment is undesirable has been previously noted (Rosenbaum et al. 2010), however the degree to which this deformation occurs and the effect that deformation has on paleolimnological data derived from horizontal sectioning has never been investigated quantitatively.
 
 Rather than suggest that deformation does not occur (Glew et al. 2001 Figure 3), or that a particular coring method prevents this from happening (Smol 2009 p35), we suggest that acknowledging deformation and its effect on paleolimnological data is a more reasonable approach. We suspect, given the innumerable paleolimnological studies that use coring and extrusion to produce reasonable and reproducable results, that either deformation or its effect on the data is minimal. This paper is our attempt to quantify and constrain the degree to which convex upwards deformation adds bias to horizontally sectioned paleolimnological data.
 
@@ -77,48 +78,26 @@ original_data <- create_random_data(seed=2500, smoothing=10, func=rlnorm,
 ![pictures of deformed cores](deformed cores/def_cores_summaryfig.png)
 
 ```{r}
-# load
-deformations <- read.csv("deformed cores/deformed_cores_summary.csv")
-# calc the x0 and y0 to use as the base coordinates (to transform x and y to r and d)
-layers <- deformations %>% 
-  group_by(layercode) %>% 
-  summarise(x0=mean(range(x)), y0=min(y))
-deformations <- merge(deformations, layers, by="layercode")
-deformations$r <- deformations$x-deformations$x0
-deformations$d <- deformations$y-deformations$y0
-deformations <- deformations %>% select(layercode, core, layer, r, d)
-
 # plot cores with quadratic smoothing
-ggplot(deformations, aes(x=r, y=d)) + 
+ggplot(deformed_core_photos, aes(x=r, y=d)) + 
   geom_point(aes(col=factor(layer))) + 
   stat_smooth(method=lm, formula=y ~ poly(x, 2, raw=TRUE), se=FALSE) + 
-  scale_y_reverse() + facet_wrap(~core, scales="free")
+  scale_y_reverse() + facet_wrap(~photo, scales="free")
 
-# define the regression function
-create_quadratic_model <- function(df) {
-  model <- lm(data=df, formula=d ~ poly(r, 2, raw=TRUE))
-  return(data.frame(a=model$coefficients[3],
-                    r2=summary(model)$r.squared,
-                    df=model$df.residual))
-}
 
-# calculate quadratic models
-modelparams <- deformations %>% 
-  group_by(layercode) %>%
-  do(create_quadratic_model(.))
 
 # these are used in the model later
-mina <- round(min(modelparams$a), 3)
-maxa <- round(max(modelparams$a), 2)
-meana <- round(mean(modelparams$a), 2)
+mina <- round(min(deformed_layers$a), 3)
+maxa <- round(max(deformed_layers$a), 2)
+meana <- round(mean(deformed_layers$a), 2)
 coeffs <- c(0, mina, meana, maxa)
 ```
 
-We digitized `r length(unique(deformations$layercode))` deformed layers from `r length(unique(deformations$core))` scale photos of split cores. The quadratic regression performed produced an excellent fit of the data (r2 from `r format(min(modelparams$r2), digits=2)` to `r format(max(modelparams$r2), digits=2)`). Coefficients for `x^2` range from `r mina` to `r maxa`, with a mean of `r meana`.
+We digitized `r length(unique(deformed_core_photos$layercode))` deformed layers from `r length(unique(deformed_core_photos$core))` scale photos of split cores. The quadratic regression performed produced an excellent fit of the data (r2 from `r format(min(deformed_layers$r2), digits=2)` to `r format(max(deformed_layers$r2), digits=2)`). Coefficients for `x^2` range from `r mina` to `r maxa`, with a mean of `r meana`.
 
 
 ```{r, results='asis'}
-knitr::kable(modelparams, digits=2)
+knitr::kable(deformed_layers, digits=2)
 ```
 
 ### Deformation model
