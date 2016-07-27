@@ -2,9 +2,10 @@
 `%do%` <- foreach::`%do%`
 library(dplyr)
 
-layer_files <- list.files("data-raw/layers", pattern=".csv", full.names=TRUE)
+layer_files <- list.files("data-raw/layers", pattern=".txt", full.names=TRUE)
+
 deformations <- foreach::foreach(layer=layer_files, .combine=rbind) %do% {
-  df <- read.csv(layer)
+  df <- read.delim(layer, header=FALSE)
   names(df) <- c("x", "y")
   layer <- basename(layer)
   df$photo <- strsplit(layer, ".", fixed=TRUE)[[1]][1]
