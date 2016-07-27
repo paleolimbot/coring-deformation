@@ -25,7 +25,7 @@ layers <- deformations %>%
 deformations <- merge(deformations, layers, by="layercode")
 deformations$r <- deformations$x-deformations$x0
 deformations$d <- deformations$y-deformations$y0
-deformations <- deformations %>% select(layercode, photo, layer, r, d)
+deformations <- deformations %>% select(layercode, photo, layer, x, y, r, d)
 
 # define the regression function
 create_quadratic_model <- function(df) {
@@ -37,7 +37,7 @@ create_quadratic_model <- function(df) {
 
 # calculate quadratic models
 modelparams <- deformations %>% 
-  group_by(layercode) %>%
+  group_by(photo, layercode) %>%
   do(create_quadratic_model(.))
 
 deformed_layer_data <- deformations; rm(deformations)

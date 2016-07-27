@@ -3,6 +3,7 @@ library(ggplot2)
 library(dplyr)
 source("R/deformation_library.R") # functions
 source("data-raw/collect_layers.R") # layers data
+source("R/layer_plot.R") # layer plotting
 ```
 
 Introduction
@@ -87,19 +88,29 @@ Results
 
 ### Core photo analysis
 
-![pictures of deformed cores](deformed%20cores/def_cores_summaryfig.png)
-
 ``` r
-# plot cores with quadratic smoothing
-ggplot(deformed_layer_data, aes(x=r, y=d)) + 
-  geom_point(aes(col=factor(layer))) + 
-  stat_smooth(method=lm, formula=y ~ poly(x, 2, raw=TRUE), se=FALSE) + 
-  scale_y_reverse() + facet_wrap(~photo, scales="free")
+ggplot(deformed_layers, aes(a)) + geom_histogram(bins=30)
 ```
 
 ![](README_files/figure-markdown_github/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
+# plot core photos
+op <- par(mfrow=c(2, 3), oma=c(0,0,0,0), mar=c(0.1,0.1,1,0.1))
+plot_layer("crevice_lake.5", title="crevice_lake.5 (a=0.10)") # 0.1
+plot_layer("crevice_lake.12", title="crevice_lake.12 (a=0.20)") # 0.2
+plot_layer("menounos_cheak2.2", title="menounos_cheak2.2 (a=0.40)") # 0.4
+
+plot_layer("whistler_gc8.1", title="whistler_gc8.1 (a=0.10)") # 0.1
+plot_layer("menounos_cheak1.7", title="menounos_cheak1.7 (a=0.19)") # 0.2
+plot_layer("suzielake_2.9", title="suzielake_2.9 (a=0.41)") # 0.4
+```
+
+![](README_files/figure-markdown_github/unnamed-chunk-5-2.png)<!-- -->
+
+``` r
+par(op); rm(op)
+
 # these are used in the model later
 mina <- round(min(deformed_layers$a), 3)
 maxa <- round(max(deformed_layers$a), 2)
@@ -113,57 +124,57 @@ We digitized 0 deformed layers from 0 scale photos of split cores. The quadratic
 knitr::kable(deformed_layers, digits=2)
 ```
 
-| layercode          |     a|    r2|   df|
-|:-------------------|-----:|-----:|----:|
-| crevice\_lake.1    |  0.06|  1.00|    6|
-| crevice\_lake.10   |  0.14|  0.98|    9|
-| crevice\_lake.11   |  0.17|  0.89|    8|
-| crevice\_lake.12   |  0.20|  0.91|    6|
-| crevice\_lake.2    |  0.05|  0.99|    7|
-| crevice\_lake.3    |  0.07|  0.98|    9|
-| crevice\_lake.4    |  0.08|  0.97|    7|
-| crevice\_lake.5    |  0.10|  0.98|    7|
-| crevice\_lake.6    |  0.21|  0.92|    9|
-| crevice\_lake.7    |  0.19|  1.00|    6|
-| crevice\_lake.8    |  0.25|  0.98|    8|
-| crevice\_lake.9    |  0.23|  0.98|    7|
-| ds\_unpubl1.1      |  0.08|  1.00|    4|
-| ds\_unpubl2.1      |  0.16|  0.74|    7|
-| ds\_unpubl2.2      |  0.14|  0.58|    7|
-| ds\_unpubl3.1      |  0.16|  0.71|    8|
-| ds\_unpubl4.1      |  0.21|  0.74|    9|
-| longlake\_pc1.1    |  0.51|  0.87|   17|
-| menounos\_cheak1.1 |  0.27|  0.94|    6|
-| menounos\_cheak1.2 |  0.20|  0.94|    9|
-| menounos\_cheak1.3 |  0.16|  0.93|    9|
-| menounos\_cheak1.4 |  0.12|  0.85|    8|
-| menounos\_cheak1.5 |  0.15|  0.87|    8|
-| menounos\_cheak1.6 |  0.17|  0.93|    7|
-| menounos\_cheak1.7 |  0.19|  0.99|    5|
-| menounos\_cheak1.8 |  0.14|  0.92|    9|
-| menounos\_cheak2.1 |  0.30|  0.99|    6|
-| menounos\_cheak2.2 |  0.40|  1.00|    7|
-| menounos\_cheak2.3 |  0.37|  1.00|    8|
-| menounos\_cheak2.4 |  0.29|  0.96|    6|
-| menounos\_cheak2.5 |  0.38|  0.99|    7|
-| menounos\_cheak2.6 |  0.38|  0.99|    7|
-| menounos\_cheak2.7 |  0.24|  0.96|    6|
-| menounos\_cheak2.8 |  0.26|  0.99|    6|
-| suzielake\_1.1     |  0.16|  0.93|    7|
-| suzielake\_1.2     |  0.26|  0.83|   11|
-| suzielake\_1.3     |  0.39|  1.00|   12|
-| suzielake\_1.4     |  0.45|  0.94|   15|
-| suzielake\_2.1     |  0.16|  0.94|    7|
-| suzielake\_2.2     |  0.13|  0.98|    7|
-| suzielake\_2.3     |  0.07|  0.98|    6|
-| suzielake\_2.4     |  0.14|  0.95|    8|
-| suzielake\_2.5     |  0.29|  0.97|    8|
-| suzielake\_2.6     |  0.24|  0.85|    8|
-| suzielake\_2.7     |  0.26|  0.99|    7|
-| suzielake\_2.8     |  0.25|  0.91|    8|
-| suzielake\_2.9     |  0.41|  0.99|    9|
-| whistler\_gc4.1    |  0.16|  0.99|    8|
-| whistler\_gc8.1    |  0.10|  1.00|    9|
+| photo            | layercode          |     a|    r2|   df|
+|:-----------------|:-------------------|-----:|-----:|----:|
+| crevice\_lake    | crevice\_lake.1    |  0.06|  1.00|    6|
+| crevice\_lake    | crevice\_lake.10   |  0.14|  0.98|    9|
+| crevice\_lake    | crevice\_lake.11   |  0.17|  0.89|    8|
+| crevice\_lake    | crevice\_lake.12   |  0.20|  0.91|    6|
+| crevice\_lake    | crevice\_lake.2    |  0.05|  0.99|    7|
+| crevice\_lake    | crevice\_lake.3    |  0.07|  0.98|    9|
+| crevice\_lake    | crevice\_lake.4    |  0.08|  0.97|    7|
+| crevice\_lake    | crevice\_lake.5    |  0.10|  0.98|    7|
+| crevice\_lake    | crevice\_lake.6    |  0.21|  0.92|    9|
+| crevice\_lake    | crevice\_lake.7    |  0.19|  1.00|    6|
+| crevice\_lake    | crevice\_lake.8    |  0.25|  0.98|    8|
+| crevice\_lake    | crevice\_lake.9    |  0.23|  0.98|    7|
+| ds\_unpubl1      | ds\_unpubl1.1      |  0.08|  1.00|    4|
+| ds\_unpubl2      | ds\_unpubl2.1      |  0.16|  0.74|    7|
+| ds\_unpubl2      | ds\_unpubl2.2      |  0.14|  0.58|    7|
+| ds\_unpubl3      | ds\_unpubl3.1      |  0.16|  0.71|    8|
+| ds\_unpubl4      | ds\_unpubl4.1      |  0.21|  0.74|    9|
+| longlake\_pc1    | longlake\_pc1.1    |  0.51|  0.87|   17|
+| menounos\_cheak1 | menounos\_cheak1.1 |  0.27|  0.94|    6|
+| menounos\_cheak1 | menounos\_cheak1.2 |  0.20|  0.94|    9|
+| menounos\_cheak1 | menounos\_cheak1.3 |  0.16|  0.93|    9|
+| menounos\_cheak1 | menounos\_cheak1.4 |  0.12|  0.85|    8|
+| menounos\_cheak1 | menounos\_cheak1.5 |  0.15|  0.87|    8|
+| menounos\_cheak1 | menounos\_cheak1.6 |  0.17|  0.93|    7|
+| menounos\_cheak1 | menounos\_cheak1.7 |  0.19|  0.99|    5|
+| menounos\_cheak1 | menounos\_cheak1.8 |  0.14|  0.92|    9|
+| menounos\_cheak2 | menounos\_cheak2.1 |  0.30|  0.99|    6|
+| menounos\_cheak2 | menounos\_cheak2.2 |  0.40|  1.00|    7|
+| menounos\_cheak2 | menounos\_cheak2.3 |  0.37|  1.00|    8|
+| menounos\_cheak2 | menounos\_cheak2.4 |  0.29|  0.96|    6|
+| menounos\_cheak2 | menounos\_cheak2.5 |  0.38|  0.99|    7|
+| menounos\_cheak2 | menounos\_cheak2.6 |  0.38|  0.99|    7|
+| menounos\_cheak2 | menounos\_cheak2.7 |  0.24|  0.96|    6|
+| menounos\_cheak2 | menounos\_cheak2.8 |  0.26|  0.99|    6|
+| suzielake\_1     | suzielake\_1.1     |  0.16|  0.93|    7|
+| suzielake\_1     | suzielake\_1.2     |  0.26|  0.83|   11|
+| suzielake\_1     | suzielake\_1.3     |  0.39|  1.00|   12|
+| suzielake\_1     | suzielake\_1.4     |  0.45|  0.94|   15|
+| suzielake\_2     | suzielake\_2.1     |  0.16|  0.94|    7|
+| suzielake\_2     | suzielake\_2.2     |  0.13|  0.98|    7|
+| suzielake\_2     | suzielake\_2.3     |  0.07|  0.98|    6|
+| suzielake\_2     | suzielake\_2.4     |  0.14|  0.95|    8|
+| suzielake\_2     | suzielake\_2.5     |  0.29|  0.97|    8|
+| suzielake\_2     | suzielake\_2.6     |  0.24|  0.85|    8|
+| suzielake\_2     | suzielake\_2.7     |  0.26|  0.99|    7|
+| suzielake\_2     | suzielake\_2.8     |  0.25|  0.91|    8|
+| suzielake\_2     | suzielake\_2.9     |  0.41|  0.99|    9|
+| whistler\_gc4    | whistler\_gc4.1    |  0.16|  0.99|    8|
+| whistler\_gc8    | whistler\_gc8.1    |  0.10|  1.00|    9|
 
 ### Deformation model
 
