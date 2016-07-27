@@ -104,7 +104,7 @@ ggplot(deformed_layer_data, aes(x=r, y=d)) +
 mina <- round(min(deformed_layers$a), 3)
 maxa <- round(max(deformed_layers$a), 2)
 meana <- round(mean(deformed_layers$a), 2)
-coeffs <- c(0, mina, meana, maxa)
+coeffs <- c(0, 0.1, 0.2, 0.4)
 ```
 
 We digitized 0 deformed layers from 0 scale photos of split cores. The quadratic regression performed produced an excellent fit of the data (r2 from 0.58 to 1). Coefficients for `x^2` range from 0.054 to 0.51, with a mean of 0.21.
