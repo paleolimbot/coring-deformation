@@ -2,9 +2,11 @@
 title: "Modelling Deformation of Lake Sediments from Coring and Extrusion"
 author: "Dewey Dunnington"
 date: "July 9, 2016"
-output: 
+output:
   md_document:
     variant: markdown_github
+  word_document:
+    fig_caption: true
 ---
 
 ```{r, message=FALSE, warning=FALSE}

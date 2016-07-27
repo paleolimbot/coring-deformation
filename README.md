@@ -28,21 +28,27 @@ cellsize <- 0.1
 
 ### Core photo analysis
 
-To calculate parameters for the deformation model, we loaded 7 scale photos of deformed cores from 3 sources into ImageJ software and digitized deformed strata (Table 1). Coordinates were transformed to `ri` and `di` values for individual strata by subtracting the minimum `d` value from the rest of the values, and subtracting the central `x` value from the rest of the values. Power regression (quadratic) was performed on the data to obtain the coefficients for minimum, maximum, and mean levels of deformation. Corer type and core barrel diameter were recorded with these data.
+To calculate parameters for the deformation model, we loaded 13 scale photos of deformed cores from 3 sources into ImageJ software and digitized deformed strata (Table 1). Coordinates were transformed to `ri` and `di` values for individual strata by subtracting the minimum `d` value from the rest of the values, and subtracting the central `x` value from the rest of the values. Power regression (quadratic) was performed on the data to obtain the coefficients for minimum, maximum, and mean levels of deformation. Corer type and core barrel diameter were recorded with these data.
 
 ``` r
 knitr::kable(deformed_core_photos, digits=2)
 ```
 
-| photo            |   scale| reference                |
-|:-----------------|-------:|:-------------------------|
-| longlake\_pc1    |  102.60| White 2012               |
-| menounos\_cheak1 |   88.00| Menounos and Clague 2008 |
-| menounos\_cheak2 |   46.00| Menounos and Clague 2008 |
-| suzielake\_1     |   47.03| Spooner et al. 1997      |
-| suzielake\_2     |   26.70| Spooner et al. 1997      |
-| whistler\_gc4    |  290.25| Dunnington 2015          |
-| whistler\_gc8    |  310.23| Dunnington 2015          |
+| photo            |   scale| reference                                 |
+|:-----------------|-------:|:------------------------------------------|
+| longlake\_pc1    |  102.60| White 2012                                |
+| menounos\_cheak1 |   88.00| Menounos and Clague 2008                  |
+| menounos\_cheak2 |   46.00| Menounos and Clague 2008                  |
+| suzielake\_1     |   47.03| Spooner et al. 1997                       |
+| suzielake\_2     |   26.70| Spooner et al. 1997                       |
+| whistler\_gc4    |  290.25| Dunnington 2015                           |
+| whistler\_gc8    |  310.23| Dunnington 2015                           |
+| crevice\_lake    |   14.77| Rosenbaum et al. 2010                     |
+| menounos\_cheak3 |   49.00| Menounos et al. 2005                      |
+| ds\_unpubl1      |   87.74| Dunnington and Spooner (unpublished data) |
+| ds\_unpubl2      |   68.36| Dunnington and Spooner (unpublished data) |
+| ds\_unpubl3      |   82.00| Dunnington and Spooner (unpublished data) |
+| ds\_unpubl4      |   61.87| Dunnington and Spooner (unpublished data) |
 
 ### Deformation model
 
@@ -91,7 +97,7 @@ ggplot(deformed_layer_data, aes(x=r, y=d)) +
   scale_y_reverse() + facet_wrap(~photo, scales="free")
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-5-1.png)
+![](README_files/figure-markdown_github/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
 # these are used in the model later
@@ -101,7 +107,7 @@ meana <- round(mean(deformed_layers$a), 2)
 coeffs <- c(0, mina, meana, maxa)
 ```
 
-We digitized 0 deformed layers from 0 scale photos of split cores. The quadratic regression performed produced an excellent fit of the data (r2 from 0.83 to 1). Coefficients for `x^2` range from 0.101 to 0.51, with a mean of 0.26.
+We digitized 0 deformed layers from 0 scale photos of split cores. The quadratic regression performed produced an excellent fit of the data (r2 from 0.58 to 1). Coefficients for `x^2` range from 0.054 to 0.51, with a mean of 0.21.
 
 ``` r
 knitr::kable(deformed_layers, digits=2)
@@ -109,14 +115,31 @@ knitr::kable(deformed_layers, digits=2)
 
 | layercode          |     a|    r2|   df|
 |:-------------------|-----:|-----:|----:|
+| crevice\_lake.1    |  0.06|  1.00|    6|
+| crevice\_lake.10   |  0.14|  0.98|    9|
+| crevice\_lake.11   |  0.17|  0.89|    8|
+| crevice\_lake.12   |  0.20|  0.91|    6|
+| crevice\_lake.2    |  0.05|  0.99|    7|
+| crevice\_lake.3    |  0.07|  0.98|    9|
+| crevice\_lake.4    |  0.08|  0.97|    7|
+| crevice\_lake.5    |  0.10|  0.98|    7|
+| crevice\_lake.6    |  0.21|  0.92|    9|
+| crevice\_lake.7    |  0.19|  1.00|    6|
+| crevice\_lake.8    |  0.25|  0.98|    8|
+| crevice\_lake.9    |  0.23|  0.98|    7|
+| ds\_unpubl1.1      |  0.08|  1.00|    4|
+| ds\_unpubl2.1      |  0.16|  0.74|    7|
+| ds\_unpubl2.2      |  0.14|  0.58|    7|
+| ds\_unpubl3.1      |  0.16|  0.71|    8|
+| ds\_unpubl4.1      |  0.21|  0.74|    9|
 | longlake\_pc1.1    |  0.51|  0.87|   17|
-| menounos\_cheak1.1 |  0.28|  0.94|    6|
-| menounos\_cheak1.2 |  0.20|  0.95|    9|
+| menounos\_cheak1.1 |  0.27|  0.94|    6|
+| menounos\_cheak1.2 |  0.20|  0.94|    9|
 | menounos\_cheak1.3 |  0.16|  0.93|    9|
-| menounos\_cheak1.4 |  0.13|  0.85|    8|
+| menounos\_cheak1.4 |  0.12|  0.85|    8|
 | menounos\_cheak1.5 |  0.15|  0.87|    8|
-| menounos\_cheak1.6 |  0.17|  0.92|    7|
-| menounos\_cheak1.7 |  0.18|  0.99|    5|
+| menounos\_cheak1.6 |  0.17|  0.93|    7|
+| menounos\_cheak1.7 |  0.19|  0.99|    5|
 | menounos\_cheak1.8 |  0.14|  0.92|    9|
 | menounos\_cheak2.1 |  0.30|  0.99|    6|
 | menounos\_cheak2.2 |  0.40|  1.00|    7|
@@ -127,9 +150,18 @@ knitr::kable(deformed_layers, digits=2)
 | menounos\_cheak2.7 |  0.24|  0.96|    6|
 | menounos\_cheak2.8 |  0.26|  0.99|    6|
 | suzielake\_1.1     |  0.16|  0.93|    7|
-| suzielake\_1.2     |  0.27|  0.83|   11|
+| suzielake\_1.2     |  0.26|  0.83|   11|
 | suzielake\_1.3     |  0.39|  1.00|   12|
-| suzielake\_1.4     |  0.45|  0.93|   15|
+| suzielake\_1.4     |  0.45|  0.94|   15|
+| suzielake\_2.1     |  0.16|  0.94|    7|
+| suzielake\_2.2     |  0.13|  0.98|    7|
+| suzielake\_2.3     |  0.07|  0.98|    6|
+| suzielake\_2.4     |  0.14|  0.95|    8|
+| suzielake\_2.5     |  0.29|  0.97|    8|
+| suzielake\_2.6     |  0.24|  0.85|    8|
+| suzielake\_2.7     |  0.26|  0.99|    7|
+| suzielake\_2.8     |  0.25|  0.91|    8|
+| suzielake\_2.9     |  0.41|  0.99|    9|
 | whistler\_gc4.1    |  0.16|  0.99|    8|
 | whistler\_gc8.1    |  0.10|  1.00|    9|
 
@@ -160,7 +192,7 @@ ggplot(all %>% filter(abs(z)==min(abs(z)), slicesize==all$slicesize[1]), aes(x=x
   coord_fixed() + facet_wrap(~coeff)
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-7-1.png)
+![](README_files/figure-markdown_github/unnamed-chunk-7-1.png)<!-- -->
 
 ``` r
 # side on view
@@ -169,7 +201,7 @@ ggplot(all %>% filter(abs(y)==min(abs(y))), aes(x=x, y=z)) + geom_raster(aes(fil
   coord_fixed() + facet_grid(slicesize ~ coeff)
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-7-2.png)
+![](README_files/figure-markdown_github/unnamed-chunk-7-2.png)<!-- -->
 
 ``` r
 # create histograms with binwidth of cellsize, except with the $density param)
@@ -191,7 +223,7 @@ ggplot(histograms %>% filter(density != 0), aes(x=d, y=density)) +
   facet_grid(slicesize ~ coeff)
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-7-3.png)
+![](README_files/figure-markdown_github/unnamed-chunk-7-3.png)<!-- -->
 
 ### Effect on stratigraphic data
 
@@ -206,7 +238,7 @@ ggplot(sliced, aes(y=d, x=vals)) + geom_path() + scale_y_reverse() +
   facet_grid(slicesize ~ coeff, scales="free_x")
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-8-1.png)
+![](README_files/figure-markdown_github/unnamed-chunk-8-1.png)<!-- -->
 
 Conclusions
 -----------
