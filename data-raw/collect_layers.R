@@ -40,7 +40,10 @@ modelparams <- deformations %>%
   group_by(photo, layercode) %>%
   do(create_quadratic_model(.))
 
+pcounts <- modelparams %>% group_by(photo) %>% summarise(nlayers=length(layercode))
+deformed_core_photos <- merge(deformed_core_photos, pcounts, by="photo")
+
 deformed_layer_data <- deformations; rm(deformations)
-deformed_layers <- modelparams; rm(layers, modelparams)
+deformed_layers <- modelparams; rm(layers, modelparams, pcounts)
 
 rm(`%do%`, create_quadratic_model)
