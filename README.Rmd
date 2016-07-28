@@ -5,12 +5,16 @@ author: |-
   (1) Department of Earth & Environmental Science, Acadia University, 12 University Ave. Wolfville, Nova Scotia, Canada B4P 2R5
 csl: journal-of-paleolimnology.csl
 output:
-  word_document:
+  html_document:
     fig_caption: yes
-    reference_docx: styles.docx
+    md_extensions: -autolink_bare_uris
+    self_contained: no
   md_document:
     variant: markdown_github
-  html_document: default
+  word_document:
+    fig_caption: yes
+    md_extensions: -autolink_bare_uris
+    reference_docx: styles.docx
 nocite: |
   @white12, @dunnington15, @menounos05, @menounos08, @spooner97
 bibliography: bibliography.bib
