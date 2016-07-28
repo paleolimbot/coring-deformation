@@ -105,7 +105,7 @@ create_random_data <- function(seed=2500, smoothing=10, func=rlnorm,
   original_data <- data.frame(d0=seq(0, maxdepth, cellsize), vals=func(maxdepth/cellsize+1))
   original_data$vals <- transform(original_data$vals)
   for(s in 1:smoothing) {
-    original_data$vals <- ksmooth(original_data$d0, original_data$vals, bandwidth=cellsize)$y
+    original_data$vals <- ksmooth(original_data$d0, original_data$vals, bandwidth=cellsize*2)$y
   }
   # define density for each (linearly increasing with range)
   original_data$density <- approx(x=c(0, maxdepth), y=density, xout=original_data$d0)$y
