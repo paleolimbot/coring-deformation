@@ -58,10 +58,14 @@ deformation_model <- function(slicesize, d0=function(d, r) d - 0.1 * r^2,
 #' ggplot(extruded, aes(y=d, x=vals)) + geom_path() + scale_y_reverse()
 #' 
 extrude <- function(model, original_data) {
-  paramsfunc <- function(d0, tol=1e-13) {
-    return(original_data[sapply(d0, function(x) {
-      which(abs(original_data$d0-x) < tol)[1]
-    }),])
+  odenv <- new.env()
+  sapply(1:nrow(original_data), function(i) {
+    odenv[[as.character(original_data$d0[i])]] <- i
+  })
+  paramsfunc <- function(d0) {
+    return(original_data[unlist(lapply(as.character(d0[!is.na(d0)]), function(x) {
+      odenv[[x]]
+    }), use.names = F),])
   }
   slice_size <- max(model$z) - min(model$z)
   out <- data.frame(d=seq(min(original_data$d0)+slice_size/2, max(original_data$d0), slice_size))
@@ -84,7 +88,7 @@ extrude <- function(model, original_data) {
 #' @param transform The transformation to be applied to the random data
 #' @param density A vector containing the two values density should range between
 #' @param maxdepth The maximum depth to calculate to
-#' @param cellsize The cellsize (data will be generated with resolution cellsize/2)
+#' @param cellsize The cellsize (data will be generated with resolution cellsize)
 #'
 #' @return A \code{data.frame} with columns \code{d0}, \code{vals}, and \code{density}.
 #' @export
@@ -98,10 +102,10 @@ create_random_data <- function(seed=2500, smoothing=10, func=rlnorm,
                                density=c(0.1, 0.5),
                                maxdepth=20, cellsize=0.1) {
   set.seed(seed)
-  original_data <- data.frame(d0=seq(0, maxdepth, cellsize/2), vals=func(maxdepth/cellsize*2+1))
+  original_data <- data.frame(d0=seq(0, maxdepth, cellsize), vals=func(maxdepth/cellsize+1))
   original_data$vals <- transform(original_data$vals)
   for(s in 1:smoothing) {
-    original_data$vals <- ksmooth(original_data$d0, original_data$vals, bandwidth=cellsize*2)$y
+    original_data$vals <- ksmooth(original_data$d0, original_data$vals, bandwidth=cellsize)$y
   }
   # define density for each (linearly increasing with range)
   original_data$density <- approx(x=c(0, maxdepth), y=density, xout=original_data$d0)$y
