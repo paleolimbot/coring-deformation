@@ -1,6 +1,7 @@
 ``` r
 library(ggplot2)
 library(dplyr)
+library(multidplyr) # devtools::install_github("hadley/multidplyr")
 source("R/deformation_library.R") # functions
 source("data-raw/collect_layers.R") # layers data
 source("R/layer_plot.R") # layer plotting
@@ -24,7 +25,7 @@ Methods
 # define parameters
 barrel_width <- 6 # use 6 cm for barrel width
 slice_sizes <- c(0.1, 0.5, 1)
-cellsize <- 0.1
+cellsize <- 0.05
 ```
 
 ### Core photo analysis
@@ -241,9 +242,15 @@ ggplot(histograms %>% filter(density != 0), aes(x=d, y=density)) +
 Using the formulas, if we model extrusion, this is the effect on the data:
 
 ``` r
+# use multicore to speed this up
+cluster <- create_cluster(3)
+cluster_assign_value(cluster, "extrude", extrude)
+cluster_assign_value(cluster, "original_data", original_data)
 sliced <- all %>%
   group_by(slicesize, coeff) %>% 
-  do(extrude(., original_data))
+  partition(slicesize, coeff, cluster=cluster) %>%
+  do(extrude(., original_data)) %>%
+  collect()
 
 ggplot(sliced, aes(y=d, x=vals)) + geom_path() + scale_y_reverse() + 
   facet_grid(slicesize ~ coeff, scales="free_x")
