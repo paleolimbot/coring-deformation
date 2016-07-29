@@ -131,6 +131,55 @@ $(document).ready(function () {
 <div id="core-photo-analysis" class="section level2">
 <h2>Core photo analysis</h2>
 <p>To calculate parameters for the deformation model, we loaded 12 scale photos of deformed cores from 4 sources into ImageJ software and digitized deformed strata (Table 1). Coordinates were transformed to <code>r</code> and <code>d</code> values for individual strata by subtracting the minimum <code>d</code> value from the rest of the values, and subtracting the central <code>x</code> value from the rest of the values. Power regression (quadratic) was performed on the data to obtain reasonable coefficients for minimum, maximum, and mean levels of deformation.</p>
+</div>
+<div id="deformation-model" class="section level2">
+<h2>Deformation model</h2>
+<p>We modeled horizontal sections with height <em>H</em> and diameter <em>D</em> as a 3-dimensional raster grid with a cell size of 0.005 mm (Figure 1). For each cell <em>i</em>, an original depth <em>d<sub>0i</sub></em> was calculated with reasonable minimum, maximum, and mean parameters obtained from digitized strata. Density histograms were then obtained to estimate the contribution of each original depth <em>d<sub>0</sub></em> to the slice. For each slice, <em>d</em>=0 refers to the middle of the slice. We produced these models for <em>D</em>=6 cm, as this represents the barrel width of our Glew <span class="citation">(1989)</span> gravity corer. Compression was not modelled using this method, although modification of this model would make including compression possible.</p>
+</div>
+<div id="effect-on-paleolimnological-data" class="section level2">
+<h2>Effect on paleolimnological data</h2>
+<p>To model the concentration (mass fraction) we would obtain by sectioning and homogenizing a sample with variable concentration and density, we need to calculate total mass of the target substance divided by the mass of the slice. With a 3-dimensional raster grid using <em>n</em> cells, this value can be written as a sum of the product of concentration (<span class="math inline">\(w\)</span>), density (<span class="math inline">\(\rho\)</span>), and volume (<em>V</em>) divided by the sum of the product of <em>V</em> and <span class="math inline">\(\rho\)</span> (1).</p>
+<p><span class="math display">\[w_{avg} = \frac{\sum_{i=1}^{n} w_i\rho_iV_i}{\sum_{i=1}^{n} \rho_iV_i}\]</span></p>
+<p>We can remove <em>V<sub>i</sub></em> from the summation in both the numerator and denominator because the cell size is constant for each <em>i</em>, and write <span class="math inline">\(w\)</span> and <span class="math inline">\(\rho\)</span> as functions of <em>d<sub>0i</sub></em>.</p>
+<p><span class="math display">\[w_{avg} = \frac{\sum_{i=1}^{n} w(d_{0i})\rho(d_{0i})}{\sum_{i=1}^{n} \rho(d_{0i})}\]</span></p>
+<p>Equation (2) in combination with our deformation model allows for modelling the effect of sectioning, homogenization, and deformation given high-resoution un-altered data. We used fictional generated data to test our deformation model inspired by 1 mm resolution XRF core scanner data <span class="citation">(Guyard et al. 2007; Brunschön et al. 2010; Kylander et al. 2011)</span>, and a linear dry density gradient from 0.1 to 0.5 g/cm<sup>3</sup>. Generated data was transformed and smoothed random log normal data with a set seed for repeatability purposes.</p>
+</div>
+</div>
+<div id="results" class="section level1">
+<h1>Results</h1>
+<div id="core-photo-analysis-1" class="section level2">
+<h2>Core photo analysis</h2>
+<p>We digitized 0 deformed layers from 0 scale photos of split cores. The quadratic regression produced an excellent fit of the data (<em>r<sup>2</sup></em> from 0.58 to 1). Coefficients for <em>x<sup>2</sup></em> ranged from 0.054 to 0.51, with a mean of 0.21.</p>
+</div>
+<div id="deformation-model-1" class="section level2">
+<h2>Deformation model</h2>
+<p>Notes on distribution and such.</p>
+</div>
+<div id="effect-on-paleolimnological-data-1" class="section level2">
+<h2>Effect on paleolimnological data</h2>
+<p>Using the formulas, if we model extrusion, this is the effect on the data:</p>
+<div class="figure">
+<img src="README_files/figure-html/unnamed-chunk-6-1.png" alt="Figure 7. Extrusion and deformation modelled for artificial 0.5 mm resolution concentration data."  />
+<p class="caption">
+Figure 7. Extrusion and deformation modelled for artificial 0.5 mm resolution concentration data.
+</p>
+</div>
+</div>
+</div>
+<div id="discussion" class="section level1">
+<h1>Discussion</h1>
+<p>Any other literature out there? Haven’t yet checked…</p>
+</div>
+<div id="conclusions" class="section level1">
+<h1>Conclusions</h1>
+<p>There is a limit to how small extrusion intervals can get based on deformation. For minor deformation, even small extrusion intervals are ok.</p>
+</div>
+<div id="acknowledgements" class="section level1">
+<h1>Acknowledgements</h1>
+<p>Thanks to…</p>
+</div>
+<div id="tables" class="section level1">
+<h1>Tables</h1>
 <table>
 <caption>Table 1. Sources of core photos that contained digitized layers used in this study.</caption>
 <thead>
@@ -204,84 +253,42 @@ $(document).ready(function () {
 </tbody>
 </table>
 </div>
-<div id="deformation-model" class="section level2">
-<h2>Deformation model</h2>
-<p>We modeled horizontal sections with height <em>H</em> and diameter <em>D</em> as a 3-dimensional raster grid with a cell size of 0.005 mm (Figure 1). For each cell <em>i</em>, an original depth <em>d<sub>0i</sub></em> was calculated with reasonable minimum, maximum, and mean parameters obtained from digitized strata. Density histograms were then obtained to estimate the contribution of each original depth <em>d<sub>0</sub></em> to the slice. For each slice, <em>d</em>=0 refers to the middle of the slice. We produced these models for <em>D</em>=6 cm, as this represents the barrel width of our Glew <span class="citation">(1989)</span> gravity corer. Compression was not modelled using this method, although modification of this model would make including compression possible.</p>
+<div id="figures" class="section level1">
+<h1>Figures</h1>
 <div class="figure">
 <img src="figs/fig2_deformation_vars.png" alt="Figure 1. Schematic of variables used in the deformation model." />
 <p class="caption">Figure 1. Schematic of variables used in the deformation model.</p>
 </div>
-</div>
-<div id="effect-on-paleolimnological-data" class="section level2">
-<h2>Effect on paleolimnological data</h2>
-<p>To model the concentration (mass fraction) we would obtain by sectioning and homogenizing a sample with variable concentration and density, we need to calculate total mass of the target substance divided by the mass of the slice. With a 3-dimensional raster grid using <em>n</em> cells, this value can be written as a sum of the product of concentration (<span class="math inline">\(w\)</span>), density (<span class="math inline">\(\rho\)</span>), and volume (<em>V</em>) divided by the sum of the product of <em>V</em> and <span class="math inline">\(\rho\)</span> (1).</p>
-<p><span class="math display">\[w_{avg} = \frac{\sum_{i=1}^{n} w_i\rho_iV_i}{\sum_{i=1}^{n} \rho_iV_i}\]</span></p>
-<p>We can remove <em>V<sub>i</sub></em> from the summation in both the numerator and denominator because the cell size is constant for each <em>i</em>, and write <span class="math inline">\(w\)</span> and <span class="math inline">\(\rho\)</span> as functions of <em>d<sub>0i</sub></em>.</p>
-<p><span class="math display">\[w_{avg} = \frac{\sum_{i=1}^{n} w(d_{0i})\rho(d_{0i})}{\sum_{i=1}^{n} \rho(d_{0i})}\]</span></p>
-<p>Equation (2) in combination with our deformation model allows for modelling the effect of sectioning, homogenization, and deformation given high-resoution un-altered data. We used fictional generated data to test our deformation model inspired by 1 mm resolution XRF core scanner data <span class="citation">(Guyard et al. 2007; Brunschön et al. 2010; Kylander et al. 2011)</span>, and a linear dry density gradient from 0.1 to 0.5 g/cm<sup>3</sup>. Generated data was transformed and smoothed random log normal data with a set seed for repeatability purposes.</p>
-</div>
-</div>
-<div id="results" class="section level1">
-<h1>Results</h1>
-<div id="core-photo-analysis-1" class="section level2">
-<h2>Core photo analysis</h2>
 <div class="figure">
-<img src="README_files/figure-html/unnamed-chunk-5-1.png" alt="Figure 2. Histogram of deformation coefficients from digitized layers."  />
+<img src="README_files/figure-html/unnamed-chunk-8-1.png" alt="Figure 2. Histogram of deformation coefficients from digitized layers."  />
 <p class="caption">
 Figure 2. Histogram of deformation coefficients from digitized layers.
 </p>
 </div>
 <div class="figure">
-<img src="README_files/figure-html/unnamed-chunk-6-1.png" alt="Figure 3. Representative layers for selected deformation coefficients."  />
+<img src="README_files/figure-html/unnamed-chunk-9-1.png" alt="Figure 3. Representative layers for selected deformation coefficients."  />
 <p class="caption">
 Figure 3. Representative layers for selected deformation coefficients.
 </p>
 </div>
-<p>We digitized 0 deformed layers from 0 scale photos of split cores. The quadratic regression produced an excellent fit of the data (<em>r<sup>2</sup></em> from 0.58 to 1). Coefficients for <em>x<sup>2</sup></em> ranged from 0.054 to 0.51, with a mean of 0.21.</p>
-</div>
-<div id="deformation-model-1" class="section level2">
-<h2>Deformation model</h2>
 <div class="figure">
-<img src="README_files/figure-html/unnamed-chunk-8-1.png" alt="Figure 4. Distribution of d~0~ for d=0 by deformation coefficient."  />
+<img src="README_files/figure-html/unnamed-chunk-10-1.png" alt="Figure 4. Distribution of d~0~ for d=0 by deformation coefficient."  />
 <p class="caption">
 Figure 4. Distribution of d<sub>0</sub> for d=0 by deformation coefficient.
 </p>
 </div>
 <div class="figure">
-<img src="README_files/figure-html/unnamed-chunk-9-1.png" alt="Figure 5. Distribution of d~0~ of a vertical sliced section for multiple deformation coefficients and slice sizes."  />
+<img src="README_files/figure-html/unnamed-chunk-11-1.png" alt="Figure 5. Distribution of d~0~ of a vertical sliced section for multiple deformation coefficients and slice sizes."  />
 <p class="caption">
 Figure 5. Distribution of d<sub>0</sub> of a vertical sliced section for multiple deformation coefficients and slice sizes.
 </p>
 </div>
 <div class="figure">
-<img src="README_files/figure-html/unnamed-chunk-10-1.png" alt="Figure 6. Distribution of d~0~ values modelled for multiple deformation coefficients and slice sizes."  />
+<img src="README_files/figure-html/unnamed-chunk-12-1.png" alt="Figure 6. Distribution of d~0~ values modelled for multiple deformation coefficients and slice sizes."  />
 <p class="caption">
 Figure 6. Distribution of d<sub>0</sub> values modelled for multiple deformation coefficients and slice sizes.
 </p>
 </div>
-</div>
-<div id="effect-on-paleolimnological-data-1" class="section level2">
-<h2>Effect on paleolimnological data</h2>
-<p>Using the formulas, if we model extrusion, this is the effect on the data:</p>
-<div class="figure">
-<img src="README_files/figure-html/unnamed-chunk-11-1.png" alt="Figure 7. Extrusion and deformation modelled for artificial 0.5 mm resolution concentration data."  />
-<p class="caption">
-Figure 7. Extrusion and deformation modelled for artificial 0.5 mm resolution concentration data.
-</p>
-</div>
-</div>
-</div>
-<div id="discussion" class="section level1">
-<h1>Discussion</h1>
-<p>Any other literature out there? Haven’t yet checked…</p>
-</div>
-<div id="conclusions" class="section level1">
-<h1>Conclusions</h1>
-<p>There is a limit to how small extrusion intervals can get based on deformation. For minor deformation, even small extrusion intervals are ok.</p>
-</div>
-<div id="acknowledgements" class="section level1">
-<h1>Acknowledgements</h1>
-<p>Thanks to…</p>
 </div>
 <div id="references" class="section level1 unnumbered">
 <h1>References</h1>

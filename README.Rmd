@@ -5,22 +5,23 @@ author: |-
   (1) Department of Earth & Environmental Science, Acadia University, 12 University Ave. Wolfville, Nova Scotia, Canada B4P 2R5
 csl: journal-of-paleolimnology.csl
 output:
-  html_document:
-    fig_caption: yes
-    md_extensions: -autolink_bare_uris
-    self_contained: no
-  md_document:
-    variant: markdown_github
   word_document:
     fig_caption: yes
     md_extensions: -autolink_bare_uris
     reference_docx: styles.docx
+  md_document:
+    variant: markdown_github
+  html_document:
+    fig_caption: yes
+    md_extensions: -autolink_bare_uris
+    self_contained: no
 nocite: |
   @white12, @dunnington15, @menounos05, @menounos08, @spooner97
 bibliography: bibliography.bib
 ---
 
 ```{r, message=FALSE, warning=FALSE, include=FALSE}
+# setup libraries and options
 knitr::opts_chunk$set(dpi=150, echo=FALSE, warning=FALSE, message=FALSE)
 
 library(ggplot2)
@@ -29,6 +30,61 @@ library(multidplyr) # devtools::install_github("hadley/multidplyr")
 source("R/deformation_library.R") # functions
 source("data-raw/collect_layers.R") # layers data
 source("R/layer_plot.R") # layer plotting
+```
+
+
+```{r}
+# define parameters
+barrel_width <- 6 # use 6 cm for barrel width
+slice_sizes <- c(0.1, 0.5, 1)
+cellsize <- 0.05
+
+# define parameters used in the model later
+mina <- round(min(deformed_layers$a), 3)
+maxa <- round(max(deformed_layers$a), 2)
+meana <- round(mean(deformed_layers$a), 2)
+coeffs <- c(0, 0.1, 0.2, 0.4)
+```
+
+```{r}
+# generate data
+original_data <- create_random_data(seed=2500, smoothing=10, func=rlnorm,
+                                    transform=function(x) 1.5 ^ x * 10,
+                                    density=c(0.1, 0.5),
+                                    maxdepth=20, cellsize=cellsize)
+
+# ggplot(original_data, aes(y=d0, x=vals)) + geom_path() + scale_y_reverse()
+```
+
+```{r}
+# create models
+params <- expand.grid(slicesize=slice_sizes, coeff=coeffs)
+
+# define a wrapper function that will create the model based on the
+# parameters we would like to vary
+deformation_model_wrapper <- function(slicesize, coeff) {
+  deformation_model(slicesize, 
+                      d0=function(d, r) d - coeff * r^2, 
+                      width = barrel_width, 
+                      cellsize = cellsize)
+}
+
+# create the models in long form so we can plot with facets
+all <- params %>% 
+  group_by(slicesize, coeff) %>% 
+  do(deformation_model_wrapper(.$slicesize, .$coeff))
+```
+
+```{r}
+# perform the extrusion
+cluster <- create_cluster(7)
+cluster_assign_value(cluster, "extrude", extrude)
+cluster_assign_value(cluster, "original_data", original_data)
+sliced <- all %>%
+  group_by(slicesize, coeff) %>% 
+  partition(slicesize, coeff, cluster=cluster) %>%
+  do(extrude(., original_data)) %>%
+  collect()
 ```
 
 # Abstract
@@ -45,29 +101,13 @@ Rather than suggest that deformation does not occur or that a particular coring 
 
 We used R statistical software [@r13] to model, manipulate, and visualize our data. Packages *dplyr* and *ggplot2* were used for manipulation and visualization of data, respectively [@wickham_dplyr; @wickham_ggplot].
 
-```{r}
-# define parameters
-barrel_width <- 6 # use 6 cm for barrel width
-slice_sizes <- c(0.1, 0.5, 1)
-cellsize <- 0.05
-```
-
-
 ## Core photo analysis
 
 To calculate parameters for the deformation model, we loaded `r nrow(deformed_core_photos)` scale photos of deformed cores from `r length(unique(deformed_core_photos))` sources into ImageJ software and digitized deformed strata (Table 1). Coordinates were transformed to `r` and `d` values for individual strata by subtracting the minimum `d` value from the rest of the values, and subtracting the central `x` value from the rest of the values. Power regression (quadratic) was performed on the data to obtain reasonable coefficients for minimum, maximum, and mean levels of deformation.
 
-```{r, results='asis'}
-knitr::kable(deformed_core_photos %>% select(photo, nlayers, reference),
-             col.names=c("Photo ID", "Layers Digitized", "Reference"),
-             caption="Table 1. Sources of core photos that contained digitized layers used in this study.")
-```
-
 ## Deformation model
 
 We modeled horizontal sections with height *H* and diameter *D* as a 3-dimensional raster grid with a cell size of `r cellsize/10` mm (Figure 1). For each cell *i*, an original depth *d~0i~* was calculated with reasonable minimum, maximum, and mean parameters obtained from digitized strata. Density histograms were then obtained to estimate the contribution of each original depth *d~0~* to the slice. For each slice, *d*=0 refers to the middle of the slice. We produced these models for *D*=`r barrel_width` cm, as this represents the barrel width of our Glew [-@glew89] gravity corer. Compression was not modelled using this method, although modification of this model would make including compression possible.
-
-![Figure 1. Schematic of variables used in the deformation model.](figs/fig2_deformation_vars.png)
 
 ## Effect on paleolimnological data
 
@@ -81,21 +121,50 @@ $$w_{avg} = \frac{\sum_{i=1}^{n} w(d_{0i})\rho(d_{0i})}{\sum_{i=1}^{n} \rho(d_{0
 
 Equation (2) in combination with our deformation model allows for modelling the effect of sectioning, homogenization, and deformation given high-resoution un-altered data. We used fictional generated data to test our deformation model inspired by 1 mm resolution XRF core scanner data [@guyard07; @brunschon10; @kylander11], and a linear dry density gradient from 0.1 to 0.5 g/cm^3^. Generated data was transformed and smoothed random log normal data with a set seed for repeatability purposes.
 
-
-```{r}
-# generate data
-original_data <- create_random_data(seed=2500, smoothing=10, func=rlnorm,
-                                    transform=function(x) 1.5 ^ x * 10,
-                                    density=c(0.1, 0.5),
-                                    maxdepth=20, cellsize=cellsize)
-
-# ggplot(original_data, aes(y=d0, x=vals)) + geom_path() + scale_y_reverse()
-```
-
-
 # Results
 
 ## Core photo analysis
+
+We digitized `r length(unique(deformed_core_photos$layercode))` deformed layers from `r length(unique(deformed_core_photos$core))` scale photos of split cores. The quadratic regression produced an excellent fit of the data (*r^2^* from `r format(min(deformed_layers$r2), digits=2)` to `r format(max(deformed_layers$r2), digits=2)`). Coefficients for *x^2^* ranged from `r round(min(deformed_layers$a), 3)` to `r round(max(deformed_layers$a), 2)`, with a mean of `r round(mean(deformed_layers$a), 2)`.
+
+## Deformation model
+
+Notes on distribution and such.
+
+## Effect on paleolimnological data
+
+Using the formulas, if we model extrusion, this is the effect on the data:
+
+```{r, fig.cap="Figure 7. Extrusion and deformation modelled for artificial 0.5 mm resolution concentration data."}
+ggplot(sliced, aes(y=d, x=vals)) + geom_path() + scale_y_reverse() + 
+  facet_grid(slicesize ~ coeff, scales="free_x") + 
+  labs(x="Deformation coefficient (a)", y="Extrusion interval (cm)")
+```
+
+# Discussion
+
+Any other literature out there? Haven't yet checked...
+
+# Conclusions
+
+There is a limit to how small extrusion intervals can get based on deformation. For minor deformation, even small extrusion intervals are ok.
+
+# Acknowledgements
+
+Thanks to...
+
+# Tables
+
+```{r, results='asis'}
+# Table 1
+knitr::kable(deformed_core_photos %>% select(photo, nlayers, reference),
+             col.names=c("Photo ID", "Layers Digitized", "Reference"),
+             caption="Table 1. Sources of core photos that contained digitized layers used in this study.")
+```
+
+# Figures
+
+![Figure 1. Schematic of variables used in the deformation model.](figs/fig2_deformation_vars.png)
 
 ```{r, fig.cap="Figure 2. Histogram of deformation coefficients from digitized layers."}
 ggplot(deformed_layers, aes(a)) + geom_histogram(bins=30)
@@ -112,35 +181,6 @@ plot_layer("whistler_gc8.1", title="whistler_gc8.1 (a=0.10)") # 0.1
 plot_layer("menounos_cheak1.7", title="menounos_cheak1.7 (a=0.19)") # 0.2
 plot_layer("suzielake_2.9", title="suzielake_2.9 (a=0.41)") # 0.4
 par(op); rm(op)
-
-# these are used in the model later
-mina <- round(min(deformed_layers$a), 3)
-maxa <- round(max(deformed_layers$a), 2)
-meana <- round(mean(deformed_layers$a), 2)
-coeffs <- c(0, 0.1, 0.2, 0.4)
-```
-
-We digitized `r length(unique(deformed_core_photos$layercode))` deformed layers from `r length(unique(deformed_core_photos$core))` scale photos of split cores. The quadratic regression produced an excellent fit of the data (*r^2^* from `r format(min(deformed_layers$r2), digits=2)` to `r format(max(deformed_layers$r2), digits=2)`). Coefficients for *x^2^* ranged from `r mina` to `r maxa`, with a mean of `r meana`.
-
-## Deformation model
-
-```{r}
-# expand to grid
-params <- expand.grid(slicesize=slice_sizes, coeff=coeffs)
-
-# define a wrapper function that will create the model based on the
-# parameters we would like to vary
-deformation_model_wrapper <- function(slicesize, coeff) {
-  deformation_model(slicesize, 
-                      d0=function(d, r) d - coeff * r^2, 
-                      width = barrel_width, 
-                      cellsize = cellsize)
-}
-
-# create the models in long form so we can plot with facets
-all <- params %>% 
-  group_by(slicesize, coeff) %>% 
-  do(deformation_model_wrapper(.$slicesize, .$coeff))
 ```
 
 ```{r, fig.cap="Figure 4. Distribution of d~0~ for d=0 by deformation coefficient."}
@@ -179,37 +219,5 @@ ggplot(histograms %>% filter(density != 0), aes(x=d, y=density)) +
   facet_grid(slicesize ~ coeff) +
   labs(x="Deformation coefficient (a)", y="Extrusion interval (cm)")
 ```
-
-## Effect on paleolimnological data
-
-Using the formulas, if we model extrusion, this is the effect on the data:
-
-```{r, message=FALSE, fig.cap="Figure 7. Extrusion and deformation modelled for artificial 0.5 mm resolution concentration data."}
-# use multicore to speed this up
-cluster <- create_cluster(3)
-cluster_assign_value(cluster, "extrude", extrude)
-cluster_assign_value(cluster, "original_data", original_data)
-sliced <- all %>%
-  group_by(slicesize, coeff) %>% 
-  partition(slicesize, coeff, cluster=cluster) %>%
-  do(extrude(., original_data)) %>%
-  collect()
-
-ggplot(sliced, aes(y=d, x=vals)) + geom_path() + scale_y_reverse() + 
-  facet_grid(slicesize ~ coeff, scales="free_x") + 
-  labs(x="Deformation coefficient (a)", y="Extrusion interval (cm)")
-```
-
-# Discussion
-
-Any other literature out there? Haven't yet checked...
-
-# Conclusions
-
-There is a limit to how small extrusion intervals can get based on deformation. For minor deformation, even small extrusion intervals are ok.
-
-# Acknowledgements
-
-Thanks to...
 
 # References
