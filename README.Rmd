@@ -165,10 +165,10 @@ ggplot(deformed_layers, aes(a)) + geom_histogram(bins=30)
 op <- par(mfrow=c(2, 3), oma=c(0,0,0,0), mar=c(1,0.1,1,0.1))
 plot_layer("crevice_lake.5", title="crevice_lake.5 (a=0.10)") # 0.1
 plot_layer("crevice_lake.12", title="crevice_lake.12 (a=0.20)") # 0.2
-plot_layer("menounos_cheak2.2", title="menounos_cheak2.2 (a=0.40)") # 0.4
+plot_layer("cheak2.2", title="cheak2.2 (a=0.40)") # 0.4
 
 plot_layer("whistler_gc8.1", title="whistler_gc8.1 (a=0.10)") # 0.1
-plot_layer("menounos_cheak1.7", title="menounos_cheak1.7 (a=0.19)") # 0.2
+plot_layer("cheak1.7", title="cheak1.7 (a=0.19)") # 0.2
 plot_layer("suzielake_2.9", title="suzielake_2.9 (a=0.41)") # 0.4
 par(op); rm(op)
 ```
