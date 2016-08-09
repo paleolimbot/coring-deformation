@@ -29,10 +29,25 @@ deformations <- deformations %>% select(layercode, photo, layer, x, y, r, d)
 
 # define the regression function
 create_quadratic_model <- function(df) {
-  model <- lm(data=df, formula=d ~ poly(r, 2, raw=TRUE))
-  return(data.frame(a=model$coefficients[3],
-                    r2=summary(model)$r.squared,
-                    df=model$df.residual))
+  # from Acton et al. 2002
+  Z <- function(r, R, b) -b*(log(1-r/R) + r/R)
+  # start with 0, increment by 0.01 until residuals decrease
+  resids <- NA
+  r <- abs(df$r)
+  R <- max(r)
+  r <- r[2:(length(r)-1)]
+  for(b in seq(0, 10, 0.01)) {
+    vals <- Z(r, b=b, R=R)
+    residnew <- sum((vals - df$d[2:(length(df$d)-1)])^2)
+    if(is.na(resids) || residnew < resids) {
+      resids <- residnew
+    } else {
+      break
+    }
+  }
+  return(data.frame(b=b, 
+                    r2=1 - (resids / (var(df$d)*nrow(df)))
+                    ))
 }
 
 # calculate quadratic models
