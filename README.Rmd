@@ -30,7 +30,7 @@ library(multidplyr) # devtools::install_github("hadley/multidplyr")
 source("R/deformation_library.R") # functions
 source("data-raw/collect_layers.R") # layers data
 source("R/layer_plot.R") # layer plotting
-theme_set(theme_bw(8))
+theme_set(theme_grey(8))
 ```
 
 
