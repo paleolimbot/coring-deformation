@@ -22,7 +22,7 @@ bibliography: bibliography.bib
 
 ```{r, message=FALSE, warning=FALSE, include=FALSE}
 # setup libraries and options
-knitr::opts_chunk$set(dpi=150, echo=FALSE, warning=FALSE, message=FALSE, fig.path="autofig/fig_")
+knitr::opts_chunk$set(dpi=300, echo=FALSE, warning=FALSE, message=FALSE, fig.path="autofig/fig_")
 
 library(ggplot2)
 library(dplyr)
@@ -201,7 +201,7 @@ plot_layer("suzielake_2.7", title="suzielake_2.7 (b=2.02)", htin=0.07) # 2
 par(op); rm(op)
 ```
 
-```{r, fig.cap="*Fig. 5* Distribution of d~0~ for d=0 by degree of deformation. Value a=0 indicates no deformation; a=.4 indicates maximum deformation in model. Coordinates are in cetimeters."}
+```{r, fig.cap="*Fig. 5* Distribution of d~0~ for d=0 by degree of deformation. Value b=0 indicates no deformation; b=2 indicates maximum deformation in the model. Coordinates are in cetimeters."}
 # overhead view (same for all sizes of slice)
 ggplot(all %>% filter(abs(z)==min(abs(z)), slicesize==all$slicesize[1]), aes(x=x, y=y)) + 
   geom_raster(aes(fill=d0)) + 
@@ -211,7 +211,7 @@ ggplot(all %>% filter(abs(z)==min(abs(z)), slicesize==all$slicesize[1]), aes(x=x
   labs(x=NULL, y=NULL)
 ```
 
-```{r, fig.cap="*Fig. 6* Distribution of d~0~ of a vertical sliced section for multiple degrees of deformation and slice sizes. Coordinates are in centimeters.", fig.height=2}
+```{r, fig.cap="*Fig. 6* Distribution of d~0~ of a vertical sliced section for multiple degrees of deformation and slice sizes. Coordinates are in centimeters. Slice thickness is in centimetres and is indicated at right.", fig.height=2}
 # side on view
 ggplot(all %>% filter(abs(y)==min(abs(y))), aes(x=x, y=z)) + geom_raster(aes(fill=d0)) + 
   scale_fill_gradient2(name=expression(d[0]~('cm')), limits=c(-4, 0.5)) + 
