@@ -22,7 +22,7 @@ bibliography: bibliography.bib
 
 ```{r, message=FALSE, warning=FALSE, include=FALSE}
 # setup libraries and options
-knitr::opts_chunk$set(dpi=150, echo=FALSE, warning=FALSE, message=FALSE)
+knitr::opts_chunk$set(dpi=150, echo=FALSE, warning=FALSE, message=FALSE, fig.path="autofig/fig_")
 
 library(ggplot2)
 library(dplyr)
@@ -98,9 +98,9 @@ We analyzed photos of convex upward deformation in split cores to obtain reasona
 
 # Introduction
 
-Deformation and compression of lake sediment  during coring has long been known [@martin82; @wright93], aand coring equipment design has attempted to minimize the conditions that promote deformation during coring [@martin82; @lane02]. Compression of sediment  during coring is a widely accepted phenomenon [@glew01], however convex upward deformation, while widely observed [@wright93; @rosenbaum10], is infrequently discussed. Kegwin et al. [-@kegwin98] noted a radial bias in paleomagnetic data from Ocean Drilling Program (ODP) piston cores and proposed a logarithmic funcion to model the deformation observed. Aubourg and Oufi [-@aubourg99] noted a "conical fabric" develop due to "edge smearing" in soft sediments, also in relation to paleomagnetic data from ODP piston cores. Acton et al. [-@acton02] revised the logarithmic function proposed by Kegwin et al. [-@kegwin98], and created a model to correct paleomagnetic data for this bias. The logarithmic function proposed is a function of radius (*r*), core barrel radius (*R*), and degree of deformation (*b*).
+Deformation and compression of lake sediment  during coring has long been known [@martin82; @wright93], and coring equipment design has attempted to minimize the conditions that promote deformation during coring [@martin82; @lane02]. Compression of sediment  during coring is a widely accepted phenomenon [@glew01], however convex upward deformation, while widely observed [@wright93; @rosenbaum10], is infrequently discussed. Kegwin et al. [-@kegwin98] noted a radial bias in paleomagnetic data from Ocean Drilling Program (ODP) piston cores and proposed a logarithmic funcion to model the deformation observed. Aubourg and Oufi [-@aubourg99] noted a "conical fabric" develop due to "edge smearing" in soft sediments, also in relation to paleomagnetic data from ODP piston cores. Acton et al. [-@acton02] revised the logarithmic function proposed by Kegwin et al. [-@kegwin98], and created a model to correct paleomagnetic data for this bias. The logarithmic function proposed is a function of radius (*r*), core barrel radius (*R*), and degree of deformation (*b*).
 
-$$Z(r) = -b\left( ln(1-\frac{r}{R}) + \frac{r}{R} \right)$$
+(1) $Z(r) = -b\left( ln(1-\frac{r}{R}) + \frac{r}{R} \right)$
 
 Acton et al. [-@acton02] estimate the *b* parameter of the equation is generally less than 0.2 but can range up to 0.4 in ODP piston cores (Fig. 1). 
 
@@ -122,11 +122,11 @@ We modeled horizontal sections with height *H* and diameter *D* as a 3-dimension
 
 To model the concentration (mass fraction) we would obtain by sectioning and homogenizing a sample with variable concentration and density, we need to calculate total mass of the target substance divided by the mass of the slice. With a 3-dimensional raster grid using *n* cells, this value can be written as a sum of the product of concentration ($w$), density ($\rho$), and volume (*V*) divided by the sum of the product of *V* and $\rho$ (2).
 
-$$w_{avg} = \frac{\sum_{i=1}^{n} w_i\rho_iV_i}{\sum_{i=1}^{n} \rho_iV_i}$$
+(2) $w_{avg} = \frac{\sum_{i=1}^{n} w_i\rho_iV_i}{\sum_{i=1}^{n} \rho_iV_i}$
 
 We can remove *V~i~* from the summation in both the numerator and denominator because the cell size is constant for each *i*, and write $w$ and $\rho$ as functions of *d~0i~*.
 
-$$w_{avg} = \frac{\sum_{i=1}^{n} w(d_{0i})\rho(d_{0i})}{\sum_{i=1}^{n} \rho(d_{0i})}$$
+(3) $w_{avg} = \frac{\sum_{i=1}^{n} w(d_{0i})\rho(d_{0i})}{\sum_{i=1}^{n} \rho(d_{0i})}$
 
 Equation (3) in combination with our deformation model allows for modeling the effect of sectioning, homogenization, and deformation given high-resolution un-altered data. We used fictional generated data to test our deformation model inspired by 1 mm resolution XRF core scanner data [@guyard07; @brunschon10; @kylander11], and a linear dry density gradient from 0.1 to 0.5 g/cm^3^. Generated data was transformed and smoothed random log normal data with a set seed for replicability purposes.
 
@@ -142,7 +142,7 @@ Slices of size 0.1 cm, 0.5 cm, and 1 cm were modeled with a core barrel diameter
 
 ## Effect on paleolimnological data
 
-As expected, increasing the thickness of the extrusion interval decreased the detail that was visible in the data (Fig. 8). The original data include thin (<0.5 cm) layers of high concentration (>60 units), only some of which were resolvable at extrusion intervals greater than 1 mm. Peak values were lower with increasing extrusion interval size, reflecting the inclusion of less concentrated material within the interval. High values in the topmost sample are an artifact of the model; it is likely that the behavior of deformation differs at the top of the core compared to deformation below. Increasing the degree of deformation also decreased the ability to resolve high concentration layers, the peak concentration  and also resulted in  increasing the depth at which peak values were observed. When deformation occurred, decreasing the extrusion interval size did not result in increasing the effective resolution of the data. In particular, the extrusion interval of 0.1 cm and 0.5 cm produced nearly identical results when any deformation was applied in our model.
+As expected, increasing the thickness of the extrusion interval decreased the detail that was visible in the data (Fig. 8). The original data include thin (<0.5 cm) layers of high concentration (>60 units), only some of which were resolvable at extrusion intervals greater than 1 mm. Peak values were lower with increasing extrusion interval size, reflecting the inclusion of less concentrated material within the interval. High values in the topmost sample are an artifact of the model; it is likely that the behavior of deformation differs at the top of the core compared to deformation below. Increasing the degree of deformation also decreased the ability to resolve high concentration layers, decreased the peak concentration, and also resulted in increasing the depth at which peak values were observed. When deformation occurred, decreasing the extrusion interval size did not result in increasing the effective resolution of the data. In particular, the extrusion interval of 0.1 cm and 0.5 cm produced nearly identical results when any deformation was applied in our model.
 
 # Conclusions
 
@@ -184,11 +184,11 @@ rm(df, plt)
 
 ![*Fig. 2* Schematic of variables used in the deformation model. Models were produced for sections of diameter *D* and thickness *H*. Each point *i* in the section had a coordinate *d~i~* and *r~i~*, which were used to calculate the depth prior to convex upward deformation (*d~0i~*)](figs/fig2_deformation_vars.png)
 
-```{r, fig.cap="*Fig. 3* Histogram of deformation coefficients (a) from digitized layers. Higher deformation coefficients corresponded to strata that were more deformed; lower deformation coefficients corresponded to strata that were less deforemed."}
+```{r, fig.cap="*Fig. 3* Histogram of degrees of deformation (b) from digitized layers. Higher degrees of deformation corresponded to strata that were more deformed; lower degrees of deformation corresponded to strata that were less deforemed."}
 ggplot(deformed_layers, aes(b)) + geom_histogram(bins=30) + labs(x="Degree of deformation (b)", y="Count")
 ```
 
-```{r, fig.cap="*Fig. 4* Representative layers for selected deformation coefficients."}
+```{r, fig.cap="*Fig. 4* Representative layers for selected degrees of deformation."}
 # plot core photos
 op <- par(mfrow=c(2, 3), oma=c(0,0,0,0), mar=c(1,0.1,1,0.1))
 plot_layer("suzielake_2.3", title="suzielake_2.3 (b=0.53)", htin=0.07) # 0.5
@@ -201,7 +201,7 @@ plot_layer("suzielake_2.7", title="suzielake_2.7 (b=2.02)", htin=0.07) # 2
 par(op); rm(op)
 ```
 
-```{r, fig.cap="*Fig. 5* Distribution of d~0~ for d=0 by deformation coefficient. Value a=0 indicates no deformation; a=.4 indicates maximum deformation in model. Coordinates are in cetimeters."}
+```{r, fig.cap="*Fig. 5* Distribution of d~0~ for d=0 by degree of deformation. Value a=0 indicates no deformation; a=.4 indicates maximum deformation in model. Coordinates are in cetimeters."}
 # overhead view (same for all sizes of slice)
 ggplot(all %>% filter(abs(z)==min(abs(z)), slicesize==all$slicesize[1]), aes(x=x, y=y)) + 
   geom_raster(aes(fill=d0)) + 
@@ -211,7 +211,7 @@ ggplot(all %>% filter(abs(z)==min(abs(z)), slicesize==all$slicesize[1]), aes(x=x
   labs(x=NULL, y=NULL)
 ```
 
-```{r, fig.cap="*Fig. 6* Distribution of d~0~ of a vertical sliced section for multiple deformation coefficients and slice sizes. Coordinates are in centimeters.", fig.height=2}
+```{r, fig.cap="*Fig. 6* Distribution of d~0~ of a vertical sliced section for multiple degrees of deformation and slice sizes. Coordinates are in centimeters.", fig.height=2}
 # side on view
 ggplot(all %>% filter(abs(y)==min(abs(y))), aes(x=x, y=z)) + geom_raster(aes(fill=d0)) + 
   scale_fill_gradient2(name=expression(d[0]~('cm')), limits=c(-4, 0.5)) + 
@@ -242,7 +242,7 @@ ggplot(histograms %>% filter(density != 0), aes(x=d, y=density)) +
 ```
 
 
-```{r, fig.cap="*Fig. 8* Extrusion and deformation modeled for artificial 0.5 mm resolution concentration data."}
+```{r, fig.cap="*Fig. 8* Extrusion and deformation modeled for artificial 0.5 mm resolution concentration data. Original data is top left. Degree of deformation increases to the right; slice thickness increases toward the bottom."}
 ggplot(sliced, aes(y=d, x=vals)) + geom_path() + scale_y_reverse() + 
   facet_grid(slicesize ~ coeff, 
              scales="free_x", 
