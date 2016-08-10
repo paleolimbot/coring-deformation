@@ -28,7 +28,7 @@ deformations$d <- deformations$y-deformations$y0
 deformations <- deformations %>% select(layercode, photo, layer, x, y, r, d)
 
 # define the regression function
-create_quadratic_model <- function(df) {
+create_logarithmic_model <- function(df) {
   # from Acton et al. 2002
   Z <- function(r, R, b) -b*(log(1-r/R) + r/R)
   # start with 0, increment by 0.01 until residuals decrease
@@ -36,9 +36,11 @@ create_quadratic_model <- function(df) {
   r <- abs(df$r)
   R <- max(r)
   r <- r[2:(length(r)-1)]
+  d <- df$d[2:(length(df$d)-1)]
   for(b in seq(0, 10, 0.01)) {
     vals <- Z(r, b=b, R=R)
-    residnew <- sum((vals - df$d[2:(length(df$d)-1)])^2)
+    mask <- is.nan(vals) | is.infinite(vals)
+    residnew <- sum((vals[!mask] - d[!mask])^2)
     if(is.na(resids) || residnew < resids) {
       resids <- residnew
     } else {
@@ -46,14 +48,14 @@ create_quadratic_model <- function(df) {
     }
   }
   return(data.frame(b=b, 
-                    r2=1 - (resids / (var(df$d)*nrow(df)))
+                    r2=1 - (resids / (var(d)*nrow(df)))
                     ))
 }
 
 # calculate quadratic models
 modelparams <- deformations %>% 
   group_by(photo, layercode) %>%
-  do(create_quadratic_model(.))
+  do(create_logarithmic_model(.))
 
 pcounts <- modelparams %>% group_by(photo) %>% summarise(nlayers=length(layercode))
 deformed_core_photos <- merge(deformed_core_photos, pcounts, by="photo")
@@ -61,4 +63,4 @@ deformed_core_photos <- merge(deformed_core_photos, pcounts, by="photo")
 deformed_layer_data <- deformations; rm(deformations)
 deformed_layers <- modelparams; rm(layers, modelparams, pcounts)
 
-rm(`%do%`, create_quadratic_model)
+rm(`%do%`, create_logarithmic_model)
