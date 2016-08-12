@@ -94,7 +94,7 @@ Keywords: Coring, Deformation, 3D Model, Extrusion, Stratigraphy
 
 # Abstract
 
-We analyzed photos of convex upward deformation in split cores to obtain reasonable parameters with which to model the effect of convex upward deformation on paleolimnological data, and, using a 3-dimensional raster model, modeled the effect of this deformation on paleolimnological data. The data indicated that convex upward deformation integrates sample from an increasingly wider range of stratigraphic layers with increasing degree of deformation. After applying deformation extruded concentration profiles were nearly identical despite varying the extrusion interval between 0.1 cm and 1 cm, suggesting there is a limit to the resolution attainable by horizontal sectioning if deformation occured during sampling. Collectively our data suggest that determining the degree of deformation due to coring is essential prior to conducting high-resolution analysis of horizontally sectioned samples.
+We analyzed photos of convex upward deformation in split cores to obtain reasonable parameters with which to model the effect of convex upward deformation on paleolimnological data, and, using a 3-dimensional raster model, modeled the effect of this deformation on a hypothetical dataset. Results indicated that convex upward deformation integrates sample from an increasingly wider range of stratigraphic layers with increasing degree of deformation. After applying deformation, extruded concentration profiles were nearly identical despite varying the extrusion interval between 0.1 cm and 1 cm, suggesting there is a limit to the resolution attainable by horizontal sectioning if deformation occurred during sampling. Collectively our data suggest that determining the degree of deformation due to coring is essential prior to conducting high-resolution analysis of horizontally sectioned samples.
 
 # Introduction
 
@@ -128,13 +128,13 @@ We can remove *V~i~* from the summation in both the numerator and denominator be
 
 (3) $w_{avg} = \frac{\sum_{i=1}^{n} w(d_{0i})\rho(d_{0i})}{\sum_{i=1}^{n} \rho(d_{0i})}$
 
-Equation (3) in combination with our deformation model allows for modeling the effect of sectioning, homogenization, and deformation given high-resolution un-altered data. We used fictional generated data to test our deformation model inspired by 1 mm resolution XRF core scanner data [@guyard07; @brunschon10; @kylander11], and a linear dry density gradient from 0.1 to 0.5 g/cm^3^. Generated data was transformed and smoothed random log normal data with a set seed for replicability purposes.
+Equation (3) in combination with our deformation model allows for modeling the effect of sectioning, homogenization, and deformation given high-resolution un-altered data. We used a generated dataset to test our deformation model inspired by 1 mm resolution XRF core scanner data [@guyard07; @brunschon10; @kylander11], and a linear dry density gradient from 0.1 to 0.5 g/cm^3^. Generated data was transformed and smoothed random log normal data with a set seed for replicability purposes.
 
 # Results
 
 ## Core photo analysis
 
-We digitized `r nrow(deformed_layers)` deformed layers from `r nrow(deformed_core_photos)` scale photos of split cores. The logarithmic function was able to model most layers well (median *r^2^* of `r format(median(deformed_layers$r2), digits=2)`), but modelled some layers poorly. The *b* coefficient ranged from `r round(min(deformed_layers$b), 2)` to `r round(max(deformed_layers$b), 2)`, with a median of `r round(median(deformed_layers$b), 2)` (Fig. 3). We chose 0, 0.5, 1, and 2 as coefficients for our model to produce a reasonable summary of the deformation that was observed (Fig. 4).
+We digitized `r nrow(deformed_layers)` deformed layers from `r nrow(deformed_core_photos)` scale photos of split cores. The logarithmic function was able to model most layers well (median *r^2^* of `r format(median(deformed_layers$r2), digits=2)`), but modeled some layers poorly. The *b* coefficient ranged from `r round(min(deformed_layers$b), 2)` to `r round(max(deformed_layers$b), 2)`, with a median of `r round(median(deformed_layers$b), 2)` (Fig. 3). We chose 0, 0.5, 1, and 2 as coefficients for our model to produce a reasonable summary of the deformation that was observed (Fig. 4).
 
 ## Deformation model
 
@@ -146,7 +146,7 @@ As expected, increasing the thickness of the extrusion interval decreased the de
 
 # Conclusions
 
-The data indicated that even minimal deformation has an effect on paleolimnological data. Many deformed core photos that were analyzed were of cores collected by percussion coring, which is known to produce intense convex upward deformation [@reasoner93], however some photos of split gravity cores also contained a small degree of deformation. Even when a small degree of deformation occurred, decreasing the extrusion interval did not result in an appreciably different paleolimnological data (Fig. 8) or in decreasing the range of depths represented by the slice (Fig. 7). Extrusion methods can produce sediment intervals of less than 0.1 cm [@cocquyt04], however our data suggest that reducing the extrusion interval does not increase the effective resolution of the data if sediment has been deformed by coring. Our data suggest that checking for deformation due to coring is essential prior to conducting high-resolution analysis of horizontally sectioned samples.
+The data indicated that even minimal deformation has an effect on paleolimnological data. Many deformed core photos that were analyzed were of cores collected by percussion coring, which can produce intense convex upward deformation [@reasoner93], however some photos of split gravity cores also contained observable deformation. Even when deformation was small, decreasing the extrusion interval did not result in an appreciable difference in the paleolimnological data (Fig. 8) or in decreasing the range of depths represented by the slice (Fig. 7). Extrusion methods can produce sediment intervals of less than 0.1 cm [@cocquyt04], however our data suggest that reducing the extrusion interval does not increase the effective resolution of the data if sediment has been deformed by coring. Our data suggest that checking for deformation due to coring is essential prior to conducting high-resolution analysis of horizontally sectioned samples.
 
 # Acknowledgements
 
@@ -184,7 +184,7 @@ rm(df, plt)
 
 ![*Fig. 2* Schematic of variables used in the deformation model. Models were produced for sections of diameter *D* and thickness *H*. Each point *i* in the section had a coordinate *d~i~* and *r~i~*, which were used to calculate the depth prior to convex upward deformation (*d~0i~*)](figs/fig2_deformation_vars.png)
 
-```{r, fig.cap="*Fig. 3* Histogram of degrees of deformation (b) from digitized layers. Higher degrees of deformation corresponded to strata that were more deformed; lower degrees of deformation corresponded to strata that were less deforemed."}
+```{r, fig.cap="*Fig. 3* Histogram of degrees of deformation (b) from digitized layers. Higher degrees of deformation corresponded to strata that were more deformed; lower degrees of deformation corresponded to strata that were less deformed."}
 ggplot(deformed_layers, aes(b)) + geom_histogram(bins=30) + labs(x="Degree of deformation (b)", y="Count")
 ```
 
@@ -201,7 +201,7 @@ plot_layer("suzielake_2.7", title="suzielake_2.7 (b=2.02)", htin=0.07) # 2
 par(op); rm(op)
 ```
 
-```{r, fig.cap="*Fig. 5* Distribution of d~0~ for d=0 by degree of deformation. Value b=0 indicates no deformation; b=2 indicates maximum deformation in the model. Coordinates are in cetimeters."}
+```{r, fig.cap="*Fig. 5* Distribution of d~0~ for d=0 by degree of deformation. Value b=0 indicates no deformation; b=2 indicates maximum deformation in the model. Coordinates are in centimeters."}
 # overhead view (same for all sizes of slice)
 ggplot(all %>% filter(abs(z)==min(abs(z)), slicesize==all$slicesize[1]), aes(x=x, y=y)) + 
   geom_raster(aes(fill=d0)) + 
@@ -211,7 +211,7 @@ ggplot(all %>% filter(abs(z)==min(abs(z)), slicesize==all$slicesize[1]), aes(x=x
   labs(x=NULL, y=NULL)
 ```
 
-```{r, fig.cap="*Fig. 6* Distribution of d~0~ of a vertical sliced section for multiple degrees of deformation and slice sizes. Coordinates are in centimeters. Slice thickness is in centimetres and is indicated at right.", fig.height=2}
+```{r, fig.cap="*Fig. 6* Distribution of d~0~ of a vertically sliced section for multiple degrees of deformation and slice sizes. Coordinates are in centimeters. Slice thickness is in centimetres and is indicated at right.", fig.height=2}
 # side on view
 ggplot(all %>% filter(abs(y)==min(abs(y))), aes(x=x, y=z)) + geom_raster(aes(fill=d0)) + 
   scale_fill_gradient2(name=expression(d[0]~('cm')), limits=c(-4, 0.5)) + 
